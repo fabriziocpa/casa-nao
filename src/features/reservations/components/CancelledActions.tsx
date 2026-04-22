@@ -1,21 +1,24 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ActionPopup } from "./ActionPopup";
 
 type Props = {
-  cancelAction: () => Promise<void>;
+  deleteAction: () => Promise<void>;
 };
 
-export function ConfirmedActions({ cancelAction }: Props) {
+export function CancelledActions({ deleteAction }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const onCancel = () => {
+  const onDelete = () => {
     startTransition(async () => {
       try {
-        await cancelAction();
+        await deleteAction();
+        router.push("/admin/reservas");
       } catch (error) {
         setErrorMessage(toUserMessage(error));
       }
@@ -27,24 +30,24 @@ export function ConfirmedActions({ cancelAction }: Props) {
       <button
         type="button"
         disabled={pending}
-        onClick={() => setConfirmOpen(true)}
-        className="w-full sm:w-auto rounded-full bg-ink/80 text-bg tracking-label text-[11px] px-5 py-2 hover:bg-ink transition disabled:opacity-40"
+        onClick={() => setConfirmDeleteOpen(true)}
+        className="w-full sm:w-auto rounded-full bg-rose/70 text-ink tracking-label text-[11px] px-5 py-2 hover:bg-rose transition disabled:opacity-40"
       >
-        {pending ? "Cancelando…" : "Cancelar reserva"}
+        {pending ? "Borrando…" : "Borrar del historial"}
       </button>
 
       <ActionPopup
-        open={confirmOpen}
-        title="Cancelar reserva"
-        description="La reserva quedará en estado cancelada y se liberarán sus fechas."
-        confirmLabel={pending ? "Cancelando…" : "Sí, cancelar"}
+        open={confirmDeleteOpen}
+        title="Eliminar del historial"
+        description="Esta reserva cancelada se eliminará de forma permanente."
+        confirmLabel={pending ? "Borrando…" : "Sí, eliminar"}
         cancelLabel="Volver"
         tone="danger"
         pending={pending}
-        onClose={() => setConfirmOpen(false)}
+        onClose={() => setConfirmDeleteOpen(false)}
         onConfirm={() => {
-          setConfirmOpen(false);
-          onCancel();
+          setConfirmDeleteOpen(false);
+          onDelete();
         }}
       />
       <ActionPopup

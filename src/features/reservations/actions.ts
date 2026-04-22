@@ -329,5 +329,28 @@ export async function deleteRejectedReservation(reservationId: string) {
   revalidatePath("/");
   revalidatePath("/admin/calendario");
   revalidatePath("/admin/reservas");
-  redirect("/admin/reservas");
+}
+
+export async function deleteCancelledReservation(reservationId: string) {
+  const { isAdmin } = await requireAdmin();
+  if (!isAdmin) throw new Error("Not authorized");
+
+  const rows = await db
+    .select({ status: reservations.status })
+    .from(reservations)
+    .where(eq(reservations.id, reservationId))
+    .limit(1);
+  const r = rows[0];
+  if (!r) throw new Error("Reservation not found");
+  if (r.status !== "cancelled") {
+    throw new Error("Solo se pueden borrar reservas canceladas.");
+  }
+
+  await db.delete(blockedDates).where(eq(blockedDates.reservationId, reservationId));
+  await db.delete(reservations).where(eq(reservations.id, reservationId));
+
+  revalidateTag("blocked_dates");
+  revalidatePath("/");
+  revalidatePath("/admin/calendario");
+  revalidatePath("/admin/reservas");
 }
