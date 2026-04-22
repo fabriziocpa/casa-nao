@@ -3,8 +3,9 @@ import "server-only";
 import { addMonths, startOfDay } from "date-fns";
 import { and, eq, gte, lte, ne, or } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+import { siteConfig } from "@/config/site";
 import { db } from "@/db";
-import { basePricing, blockedDates, pricingRules, reservations } from "@/db/schema";
+import { blockedDates, pricingRules, reservations } from "@/db/schema";
 import { toIso } from "@/lib/dates";
 import type { BasePricingInput, PricingRuleInput } from "./pricing";
 
@@ -53,14 +54,10 @@ export const getActivePricingRules = unstable_cache(
 
 export const getBasePricing = unstable_cache(
   async (): Promise<BasePricingInput> => {
-    const rows = await db.select().from(basePricing).limit(1);
-    if (!rows[0]) {
-      return { nightlyCents: 70000, minNights: 2, maxGuests: 15 };
-    }
     return {
-      nightlyCents: rows[0].nightlyCents,
-      minNights: rows[0].minNights,
-      maxGuests: rows[0].maxGuests,
+      nightlyCents: siteConfig.baseNightlyCents,
+      minNights: siteConfig.lowSeasonMinNights,
+      maxGuests: siteConfig.maxGuests,
     };
   },
   ["reservations.base_pricing"],

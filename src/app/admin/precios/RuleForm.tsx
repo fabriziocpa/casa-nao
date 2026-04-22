@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatUSDPrecise } from "@/lib/money";
+import { cn } from "@/lib/utils";
 
 type Mode = "manual" | "discount";
 
@@ -23,7 +24,8 @@ type Props = {
   submitLabel: string;
 };
 
-const inputCls = "w-full h-9 rounded-md border border-line px-3 text-sm bg-white";
+const inputCls =
+  "w-full h-10 rounded-md border border-line bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal";
 
 export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props) {
   const [mode, setMode] = useState<Mode>("manual");
@@ -38,89 +40,90 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
     [mode, roundToInt, discountPct, nightlyDollars, baseNightlyCents],
   );
 
-  const baseDollars = baseNightlyCents / 100;
+  const savings =
+    mode === "discount" && previewCents != null ? baseNightlyCents - previewCents : null;
 
   return (
     <form
       action={action}
-      className="grid gap-3 md:grid-cols-6 rounded-xl border border-line bg-white/60 p-4"
+      className="space-y-6 rounded-xl border border-line bg-white/70 p-6"
     >
       {rule?.id ? <input type="hidden" name="id" value={rule.id} /> : null}
 
-      <label className="md:col-span-2 block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Nombre</span>
-        <input name="name" defaultValue={rule?.name ?? ""} required className={inputCls} />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Inicio</span>
-        <input
-          name="startDate"
-          type="date"
-          defaultValue={rule?.startDate ?? ""}
-          required
-          className={inputCls}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Fin</span>
-        <input
-          name="endDate"
-          type="date"
-          defaultValue={rule?.endDate ?? ""}
-          required
-          className={inputCls}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Min noches</span>
-        <input
-          name="minNights"
-          type="number"
-          defaultValue={rule?.minNights ?? ""}
-          className={inputCls}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Prioridad</span>
-        <input
-          name="priority"
-          type="number"
-          defaultValue={rule?.priority ?? 100}
-          className={inputCls}
-        />
-      </label>
+      <PreviewCard previewCents={previewCents} savings={savings} mode={mode} />
 
-      <fieldset className="md:col-span-6 space-y-2 rounded-md border border-line bg-sand/30 p-3">
-        <legend className="tracking-label text-[11px] text-ink/60 px-1">
-          Cómo definir la tarifa
-        </legend>
-        <div className="flex flex-wrap gap-4 text-sm">
-          <label className="inline-flex items-center gap-2">
+      <div className="space-y-4">
+        <h3 className="tracking-label text-[11px] text-ink/60">Datos de la temporada</h3>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Field label="Nombre de la temporada" className="md:col-span-3">
             <input
-              type="radio"
-              name="mode"
-              value="manual"
-              checked={mode === "manual"}
-              onChange={() => setMode("manual")}
+              name="name"
+              defaultValue={rule?.name ?? ""}
+              required
+              placeholder="Ej. Temporada alta verano"
+              className={inputCls}
             />
-            Precio manual
-          </label>
-          <label className="inline-flex items-center gap-2">
+          </Field>
+          <Field label="Desde">
             <input
-              type="radio"
-              name="mode"
-              value="discount"
-              checked={mode === "discount"}
-              onChange={() => setMode("discount")}
+              name="startDate"
+              type="date"
+              defaultValue={rule?.startDate ?? ""}
+              required
+              className={inputCls}
             />
-            % descuento sobre base ({formatUSDPrecise(baseNightlyCents)})
-          </label>
+          </Field>
+          <Field label="Hasta">
+            <input
+              name="endDate"
+              type="date"
+              defaultValue={rule?.endDate ?? ""}
+              required
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Mínimo de noches (opcional)" hint="Déjalo vacío para usar el mínimo general">
+            <input
+              name="minNights"
+              type="number"
+              min={1}
+              defaultValue={rule?.minNights ?? ""}
+              placeholder="—"
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="tracking-label text-[11px] text-ink/60">Cómo definir la tarifa</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ModeCard
+            selected={mode === "manual"}
+            onSelect={() => setMode("manual")}
+            title="Precio fijo"
+            subtitle="Tú defines el monto por noche"
+            name="mode"
+            value="manual"
+          />
+          <ModeCard
+            selected={mode === "discount"}
+            onSelect={() => setMode("discount")}
+            title="Descuento sobre tarifa base"
+            subtitle={
+              baseNightlyCents > 0
+                ? `Aplica un % sobre ${formatUSDPrecise(baseNightlyCents)}`
+                : "Configura primero la tarifa base"
+            }
+            name="mode"
+            value="discount"
+            disabled={baseNightlyCents <= 0}
+          />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {mode === "manual" ? (
-            <label className="block space-y-1">
-              <span className="tracking-label text-[11px] text-ink/60">USD / noche</span>
+            <Field label="Precio por noche (USD)">
               <input
                 name="nightlyDollars"
                 type="number"
@@ -129,61 +132,181 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
                 value={nightlyDollars}
                 onChange={(e) => setNightlyDollars(e.target.value)}
                 required
+                placeholder="Ej. 250"
                 className={inputCls}
               />
-            </label>
+            </Field>
           ) : (
-            <label className="block space-y-1">
-              <span className="tracking-label text-[11px] text-ink/60">% descuento</span>
-              <input
-                name="discountPct"
-                type="number"
-                step="1"
-                min="1"
-                max="99"
-                value={discountPct}
-                onChange={(e) => setDiscountPct(e.target.value)}
-                required
-                className={inputCls}
-              />
-            </label>
+            <Field label="Porcentaje de descuento">
+              <div className="relative">
+                <input
+                  name="discountPct"
+                  type="number"
+                  step="1"
+                  min="1"
+                  max="99"
+                  value={discountPct}
+                  onChange={(e) => setDiscountPct(e.target.value)}
+                  required
+                  className={cn(inputCls, "pr-9")}
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-ink/50 text-sm">
+                  %
+                </span>
+              </div>
+            </Field>
           )}
-          <label className="md:col-span-2 inline-flex items-center gap-2 text-sm pt-5">
-            <input
-              type="checkbox"
-              name="roundToInteger"
-              checked={roundToInt}
-              onChange={(e) => setRoundToInt(e.target.checked)}
-            />
-            Redondear a dólares enteros
-          </label>
+          <Field label="Redondeo">
+            <label className="flex items-center gap-2 h-10 text-sm text-ink/80">
+              <input
+                type="checkbox"
+                name="roundToInteger"
+                checked={roundToInt}
+                onChange={(e) => setRoundToInt(e.target.checked)}
+              />
+              Redondear a un número entero
+            </label>
+          </Field>
         </div>
+      </div>
 
-        <p className="text-xs text-ink/70">
-          Tarifa resultante:{" "}
-          <span className="font-display text-base text-ink">
-            {previewCents != null ? formatUSDPrecise(previewCents) : "—"}
-          </span>
-          {mode === "discount" && previewCents != null && baseDollars > 0 ? (
-            <span className="text-ink/50">
-              {" "}
-              · ahorras {formatUSDPrecise(baseNightlyCents - previewCents)} vs. base
-            </span>
-          ) : null}
-        </p>
-      </fieldset>
+      <details className="group">
+        <summary className="cursor-pointer list-none tracking-label text-[11px] text-ink/60 hover:text-ink">
+          <span className="inline-block transition group-open:rotate-90">›</span>{" "}
+          Opciones avanzadas
+        </summary>
+        <div className="pt-4 grid gap-4 md:grid-cols-2">
+          <Field
+            label="Prioridad"
+            hint="Si dos temporadas se superponen, gana la de mayor prioridad"
+          >
+            <input
+              name="priority"
+              type="number"
+              defaultValue={rule?.priority ?? 100}
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Estado">
+            <label className="flex items-center gap-2 h-10 text-sm text-ink/80">
+              <input type="checkbox" name="active" defaultChecked={rule?.active ?? true} />
+              Temporada activa
+            </label>
+          </Field>
+        </div>
+      </details>
 
-      <label className="md:col-span-2 flex items-center gap-2 text-sm">
-        <input type="checkbox" name="active" defaultChecked={rule?.active ?? true} />
-        Activa
-      </label>
-
-      <div className="md:col-span-6">
-        <button className="rounded-md bg-ink text-bg tracking-label text-[11px] px-4 py-2">
+      <div className="pt-2 border-t border-line">
+        <button className="rounded-full bg-ink text-bg tracking-label text-[11px] px-6 py-3 hover:bg-deep-ocean transition">
           {submitLabel}
         </button>
       </div>
     </form>
+  );
+}
+
+function PreviewCard({
+  previewCents,
+  savings,
+  mode,
+}: {
+  previewCents: number | null;
+  savings: number | null;
+  mode: Mode;
+}) {
+  return (
+    <div className="rounded-lg bg-gradient-to-br from-sand/60 to-sand/20 border border-line p-5 flex items-center justify-between gap-4 flex-wrap">
+      <div>
+        <p className="tracking-label text-[11px] text-ink/60">Tarifa resultante</p>
+        <p className="font-display text-4xl text-ink">
+          {previewCents != null ? formatUSDPrecise(previewCents) : "—"}
+        </p>
+        <p className="text-xs text-ink/60">por noche</p>
+      </div>
+      {mode === "discount" && savings != null && savings > 0 ? (
+        <div className="text-right">
+          <p className="tracking-label text-[11px] text-ink/60">Ahorro por noche</p>
+          <p className="font-display text-2xl text-teal">-{formatUSDPrecise(savings)}</p>
+          <p className="text-xs text-ink/60">vs. tarifa base</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ModeCard({
+  selected,
+  onSelect,
+  title,
+  subtitle,
+  name,
+  value,
+  disabled,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  title: string;
+  subtitle: string;
+  name: string;
+  value: string;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      className={cn(
+        "relative rounded-lg border p-4 cursor-pointer transition block",
+        selected
+          ? "border-ink bg-white shadow-sm"
+          : "border-line bg-white/50 hover:border-ink/40",
+        disabled && "opacity-50 cursor-not-allowed",
+      )}
+    >
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={selected}
+        onChange={onSelect}
+        disabled={disabled}
+        className="sr-only"
+      />
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            "mt-0.5 h-4 w-4 rounded-full border shrink-0",
+            selected ? "border-ink bg-ink" : "border-ink/40 bg-white",
+          )}
+        >
+          {selected ? (
+            <span className="block h-full w-full rounded-full border-2 border-white bg-ink" />
+          ) : null}
+        </span>
+        <div>
+          <p className="text-sm font-medium text-ink">{title}</p>
+          <p className="text-xs text-ink/60 mt-0.5">{subtitle}</p>
+        </div>
+      </div>
+    </label>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  className,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={cn("block space-y-1.5", className)}>
+      <span className="tracking-label text-[11px] text-ink/70">{label}</span>
+      {children}
+      {hint ? <span className="block text-[11px] text-ink/50">{hint}</span> : null}
+    </label>
   );
 }
 

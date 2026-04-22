@@ -4,7 +4,8 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/db";
-import { pricingRules, basePricing } from "@/db/schema";
+import { pricingRules } from "@/db/schema";
+import { getBasePricing } from "@/features/reservations/queries";
 import { requireAdmin } from "@/lib/supabase/server";
 
 async function ensureAdmin() {
@@ -58,8 +59,7 @@ export async function upsertPricingRule(formData: FormData) {
     if (data.discountPct <= 0 || data.discountPct >= 100) {
       throw new Error("El descuento debe estar entre 1 y 99%.");
     }
-    const baseRows = await db.select().from(basePricing).limit(1);
-    const baseCents = baseRows[0]?.nightlyCents;
+    const { nightlyCents: baseCents } = await getBasePricing();
     if (!baseCents) {
       throw new Error("Configura primero la tarifa base.");
     }

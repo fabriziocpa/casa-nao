@@ -6,7 +6,8 @@
       "Bash(npm install *)",
       "Bash(npm uninstall *)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(git stash *)"
     ]
   }
 }
