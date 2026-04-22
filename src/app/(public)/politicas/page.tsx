@@ -27,7 +27,6 @@ export default async function PoliticasPage() {
             <li className="py-3 text-ink/80">
               Prohibido fumar dentro de la casa
             </li>
-            <li className="py-3 text-ink/80">Prohibidas las fiestas</li>
             <li className="py-3 text-ink/80">
               Prohibida la música alta después de medianoche
             </li>
