@@ -7,6 +7,7 @@ import {
 } from "@/features/pricing-rules/actions";
 import { formatUSDPrecise } from "@/lib/money";
 import { formatEs } from "@/lib/dates";
+import { RuleForm } from "./RuleForm";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function PreciosPage() {
     db.select().from(basePricing).limit(1),
   ]);
   const base = baseRows[0];
+  const baseNightlyCents = base?.nightlyCents ?? 0;
 
   return (
     <div className="space-y-10">
@@ -43,7 +45,7 @@ export default async function PreciosPage() {
             </p>
           ) : (
             rules.map((r) => (
-              <RuleCard key={r.id} rule={r} />
+              <RuleCard key={r.id} rule={r} baseNightlyCents={baseNightlyCents} />
             ))
           )}
         </div>
@@ -51,13 +53,23 @@ export default async function PreciosPage() {
 
       <section>
         <h2 className="tracking-label text-[11px] text-ink/60 mb-3">Nueva regla</h2>
-        <RuleForm action={upsertPricingRule} />
+        <RuleForm
+          action={upsertPricingRule}
+          baseNightlyCents={baseNightlyCents}
+          submitLabel="Crear regla"
+        />
       </section>
     </div>
   );
 }
 
-function RuleCard({ rule }: { rule: typeof pricingRules.$inferSelect }) {
+function RuleCard({
+  rule,
+  baseNightlyCents,
+}: {
+  rule: typeof pricingRules.$inferSelect;
+  baseNightlyCents: number;
+}) {
   const del = async () => {
     "use server";
     await deletePricingRule(rule.id);
@@ -84,7 +96,12 @@ function RuleCard({ rule }: { rule: typeof pricingRules.$inferSelect }) {
           Editar
         </summary>
         <div className="pt-3">
-          <RuleForm action={upsertPricingRule} rule={rule} />
+          <RuleForm
+            action={upsertPricingRule}
+            rule={rule}
+            baseNightlyCents={baseNightlyCents}
+            submitLabel="Guardar cambios"
+          />
         </div>
       </details>
       <form action={del}>
@@ -93,86 +110,5 @@ function RuleCard({ rule }: { rule: typeof pricingRules.$inferSelect }) {
         </button>
       </form>
     </div>
-  );
-}
-
-function RuleForm({
-  action,
-  rule,
-}: {
-  action: (fd: FormData) => Promise<void> | void;
-  rule?: typeof pricingRules.$inferSelect;
-}) {
-  return (
-    <form action={action} className="grid gap-3 md:grid-cols-6 rounded-xl border border-line bg-white/60 p-4">
-      {rule?.id ? <input type="hidden" name="id" value={rule.id} /> : null}
-      <label className="md:col-span-2 block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Nombre</span>
-        <input
-          name="name"
-          defaultValue={rule?.name ?? ""}
-          required
-          className="w-full h-9 rounded-md border border-line px-3 text-sm bg-white"
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Inicio</span>
-        <input
-          name="startDate"
-          type="date"
-          defaultValue={rule?.startDate ?? ""}
-          required
-          className="w-full h-9 rounded-md border border-line px-3 text-sm bg-white"
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Fin</span>
-        <input
-          name="endDate"
-          type="date"
-          defaultValue={rule?.endDate ?? ""}
-          required
-          className="w-full h-9 rounded-md border border-line px-3 text-sm bg-white"
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">USD / noche</span>
-        <input
-          name="nightlyDollars"
-          type="number"
-          step="1"
-          defaultValue={rule ? rule.nightlyCents / 100 : ""}
-          required
-          className="w-full h-9 rounded-md border border-line px-3 text-sm bg-white"
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Min noches</span>
-        <input
-          name="minNights"
-          type="number"
-          defaultValue={rule?.minNights ?? ""}
-          className="w-full h-9 rounded-md border border-line px-3 text-sm bg-white"
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="tracking-label text-[11px] text-ink/60">Prioridad</span>
-        <input
-          name="priority"
-          type="number"
-          defaultValue={rule?.priority ?? 100}
-          className="w-full h-9 rounded-md border border-line px-3 text-sm bg-white"
-        />
-      </label>
-      <label className="md:col-span-2 flex items-center gap-2 text-sm">
-        <input type="checkbox" name="active" defaultChecked={rule?.active ?? true} />
-        Activa
-      </label>
-      <div className="md:col-span-6">
-        <button className="rounded-md bg-ink text-bg tracking-label text-[11px] px-4 py-2">
-          {rule ? "Guardar cambios" : "Crear regla"}
-        </button>
-      </div>
-    </form>
   );
 }

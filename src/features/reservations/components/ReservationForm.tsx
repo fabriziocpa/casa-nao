@@ -5,6 +5,7 @@ import type { DateRange } from "react-day-picker";
 import { toIso } from "@/lib/dates";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { StaySummary } from "./StaySummary";
+import { PhoneInput } from "./PhoneInput";
 import { submitReservation, type ReservationFormState } from "../actions";
 import { calculateStay, type BasePricingInput, type PricingRuleInput } from "../pricing";
 import { cn } from "@/lib/utils";
@@ -82,21 +83,8 @@ export function ReservationForm({ blockedIso, rules, base }: Props) {
             <Field label="Correo" error={fe.email}>
               <input name="email" type="email" className={inputCls} required autoComplete="email" />
             </Field>
-            <Field label="Celular (+51)" error={fe.phone}>
-              <div className="flex">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-line bg-sand/40 text-sm text-ink/70">
-                  +51
-                </span>
-                <input
-                  name="phone"
-                  className={cn(inputCls, "rounded-l-none")}
-                  inputMode="numeric"
-                  pattern="9\d{8}"
-                  required
-                  autoComplete="tel-national"
-                  placeholder="9XXXXXXXX"
-                />
-              </div>
+            <Field label="Celular" error={fe.phone}>
+              <PhoneInput inputClassName={inputCls} error={Boolean(fe.phone)} />
             </Field>
             <Field label="Huéspedes" error={fe.guests}>
               <input

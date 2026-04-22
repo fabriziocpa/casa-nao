@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { PhoneInput } from "./PhoneInput";
 
 type Props = {
   reservationId: string;
@@ -63,7 +64,7 @@ export function RejectedActions({
           </label>
           <label className="block space-y-1">
             <span className="tracking-label text-[11px] text-ink/60">Celular</span>
-            <input name="phone" defaultValue={defaults.phone} className={inputCls} required />
+            <PhoneInput inputClassName={inputCls} defaultValue={defaults.phone} />
           </label>
           <label className="block space-y-1">
             <span className="tracking-label text-[11px] text-ink/60">Huéspedes</span>

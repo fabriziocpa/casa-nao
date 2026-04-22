@@ -11,10 +11,13 @@ const docRefinement = (type: "DNI" | "CE" | "PASSPORT", n: string) => {
   return /^[A-Z0-9]{6,12}$/i.test(value);
 };
 
-export const phonePeruSchema = z
+export const phoneE164Schema = z
   .string()
   .trim()
-  .regex(/^9\d{8}$/, "Ingresa un celular peruano válido (9 dígitos, inicia en 9)");
+  .regex(
+    /^\+\d{7,15}$/,
+    "Ingresa un celular válido con código de país (ej. +51987654321)",
+  );
 
 export const reservationInputSchema = z
   .object({
@@ -26,7 +29,7 @@ export const reservationInputSchema = z
     firstName: z.string().trim().min(2, "Ingresa tus nombres"),
     lastName: z.string().trim().min(2, "Ingresa tus apellidos"),
     email: z.string().trim().email("Correo inválido"),
-    phone: phonePeruSchema,
+    phone: phoneE164Schema,
     message: z.string().trim().max(1000).optional().or(z.literal("")),
     consent: z
       .union([z.literal("on"), z.literal(true), z.literal("true")])
