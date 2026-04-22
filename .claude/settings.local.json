@@ -5,7 +5,10 @@
       "Bash(node_modules/.bin/tsc --noEmit)",
       "Bash(npm install *)",
       "Bash(npm uninstall *)",
-      "Bash(./node_modules/.bin/tsc --noEmit)"
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(npx next *)",
+      "Bash(git stash *)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

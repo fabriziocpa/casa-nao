@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * Service-role client for privileged server-side operations
- * (reservation RPC, storage mutations, admin email lookups).
+ * (storage mutations, admin email lookups, and other elevated reads/writes).
  * Never import from a Client Component.
  */
 export function createSupabaseAdminClient() {

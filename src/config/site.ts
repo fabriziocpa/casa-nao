@@ -9,7 +9,7 @@ export const siteConfig = {
   defaultWhatsApp: "+51916021799",
   defaultContactEmail: "casanaoperu@gmail.com",
   maxGuests: 15,
-  baseNightlyCents: 50000,
+  baseNightlyCents: 70000,
   lowSeasonMinNights: 2,
   highSeasonMinNights: 3,
 } as const;

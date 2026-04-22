@@ -1,13 +1,12 @@
 "use server";
 
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, ne, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { reservations, blockedDates } from "@/db/schema";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { checkReservationRateLimit } from "@/lib/rate-limit";
 import { stayNightDates, toIso, fromIso } from "@/lib/dates";
 import { reservationInputSchema } from "./schemas";
@@ -71,42 +70,46 @@ export async function submitReservation(
     };
   }
 
-  const admin = createSupabaseAdminClient();
   const nightDates = stayNightDates(fromIso(input.checkIn), fromIso(input.checkOut)).map(toIso);
-
-  const { error: rpcError } = await admin.rpc(
-    "create_reservation_with_blocks",
-    {
-      p_reservation: {
-        check_in: input.checkIn,
-        check_out: input.checkOut,
-        nights: stay.nights,
-        guests: input.guests,
-        doc_type: input.docType,
-        doc_number: input.docNumber.trim().toUpperCase(),
-        first_name: input.firstName,
-        last_name: input.lastName,
-        email: input.email.toLowerCase(),
-        phone: input.phone,
-        message: input.message ?? null,
-        consent: input.consent,
-        nightly_breakdown: JSON.stringify(stay.breakdown),
-        total_cents: stay.totalCents,
-        currency: "USD",
-      },
-      p_dates: nightDates,
-    },
-  );
-
-  if (rpcError) {
-    const isConflict = rpcError.message?.includes("DATES_CONFLICT");
+  const conflicts = await db
+    .select({ date: blockedDates.date })
+    .from(blockedDates)
+    .leftJoin(reservations, eq(blockedDates.reservationId, reservations.id))
+    .where(
+      and(
+        inArray(blockedDates.date, nightDates),
+        or(
+          ne(blockedDates.reason, "reservation"),
+          eq(reservations.status, "confirmed"),
+        ),
+      ),
+    )
+    .limit(1);
+  if (conflicts[0]) {
     return {
       ok: false,
-      error: isConflict
-        ? "Las fechas seleccionadas ya no están disponibles."
-        : "No pudimos guardar tu solicitud. Intenta nuevamente.",
+      error: "Las fechas seleccionadas ya no están disponibles.",
     };
   }
+
+  await db.insert(reservations).values({
+    checkIn: input.checkIn,
+    checkOut: input.checkOut,
+    nights: stay.nights,
+    guests: input.guests,
+    docType: input.docType,
+    docNumber: input.docNumber.trim().toUpperCase(),
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email.toLowerCase(),
+    phone: input.phone,
+    message: input.message ?? null,
+    consent: input.consent,
+    nightlyBreakdown: JSON.stringify(stay.breakdown),
+    totalCents: stay.totalCents,
+    currency: "USD",
+    status: "pending",
+  });
 
   revalidatePath("/");
   redirect("/reserva/exito");
@@ -116,12 +119,78 @@ export async function confirmReservation(reservationId: string) {
   const { isAdmin } = await requireAdmin();
   if (!isAdmin) throw new Error("Not authorized");
 
-  await db
-    .update(reservations)
-    .set({ status: "confirmed", updatedAt: new Date() })
-    .where(eq(reservations.id, reservationId));
+  const rows = await db
+    .select({
+      id: reservations.id,
+      status: reservations.status,
+      checkIn: reservations.checkIn,
+      checkOut: reservations.checkOut,
+    })
+    .from(reservations)
+    .where(eq(reservations.id, reservationId))
+    .limit(1);
+  const reservation = rows[0];
+  if (!reservation) throw new Error("Reservation not found");
+  if (reservation.status !== "pending") {
+    throw new Error("Solo se pueden confirmar solicitudes pendientes.");
+  }
 
+  const nightDates = stayNightDates(
+    fromIso(reservation.checkIn),
+    fromIso(reservation.checkOut),
+  ).map(toIso);
+
+  await db.transaction(async (tx) => {
+    const staleReservationIds = tx
+      .select({ id: reservations.id })
+      .from(reservations)
+      .where(ne(reservations.status, "confirmed"));
+    await tx
+      .delete(blockedDates)
+      .where(
+        and(
+          eq(blockedDates.reason, "reservation"),
+          inArray(blockedDates.date, nightDates),
+          inArray(blockedDates.reservationId, staleReservationIds),
+        ),
+      );
+
+    const updated = await tx
+      .update(reservations)
+      .set({ status: "confirmed", updatedAt: new Date() })
+      .where(
+        and(
+          eq(reservations.id, reservationId),
+          eq(reservations.status, "pending"),
+        ),
+      )
+      .returning({ id: reservations.id });
+    if (!updated[0]) {
+      throw new Error("La solicitud ya no está pendiente.");
+    }
+
+    const inserted = await tx
+      .insert(blockedDates)
+      .values(
+        nightDates.map((date) => ({
+          date,
+          reason: "reservation",
+          reservationId,
+        })),
+      )
+      .onConflictDoNothing()
+      .returning({ date: blockedDates.date });
+
+    if (inserted.length !== nightDates.length) {
+      throw new Error(
+        "No se pudo confirmar: las fechas ya están ocupadas o bloqueadas.",
+      );
+    }
+  });
+
+  revalidateTag("blocked_dates");
   revalidatePath("/");
+  revalidatePath("/admin/calendario");
   revalidatePath("/admin/reservas");
   revalidatePath(`/admin/reservas/${reservationId}`);
 }
@@ -130,13 +199,54 @@ export async function rejectReservation(reservationId: string) {
   const { isAdmin } = await requireAdmin();
   if (!isAdmin) throw new Error("Not authorized");
 
-  await db
-    .update(reservations)
-    .set({ status: "rejected", updatedAt: new Date() })
-    .where(eq(reservations.id, reservationId));
-  await db.delete(blockedDates).where(eq(blockedDates.reservationId, reservationId));
+  await db.transaction(async (tx) => {
+    const updated = await tx
+      .update(reservations)
+      .set({ status: "rejected", updatedAt: new Date() })
+      .where(
+        and(
+          eq(reservations.id, reservationId),
+          eq(reservations.status, "pending"),
+        ),
+      )
+      .returning({ id: reservations.id });
+    if (!updated[0]) {
+      throw new Error("Solo se pueden rechazar solicitudes pendientes.");
+    }
+    await tx.delete(blockedDates).where(eq(blockedDates.reservationId, reservationId));
+  });
 
+  revalidateTag("blocked_dates");
   revalidatePath("/");
+  revalidatePath("/admin/calendario");
+  revalidatePath("/admin/reservas");
+  revalidatePath(`/admin/reservas/${reservationId}`);
+}
+
+export async function cancelConfirmedReservation(reservationId: string) {
+  const { isAdmin } = await requireAdmin();
+  if (!isAdmin) throw new Error("Not authorized");
+
+  await db.transaction(async (tx) => {
+    const updated = await tx
+      .update(reservations)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(
+        and(
+          eq(reservations.id, reservationId),
+          eq(reservations.status, "confirmed"),
+        ),
+      )
+      .returning({ id: reservations.id });
+    if (!updated[0]) {
+      throw new Error("Solo se pueden cancelar reservas confirmadas.");
+    }
+    await tx.delete(blockedDates).where(eq(blockedDates.reservationId, reservationId));
+  });
+
+  revalidateTag("blocked_dates");
+  revalidatePath("/");
+  revalidatePath("/admin/calendario");
   revalidatePath("/admin/reservas");
   revalidatePath(`/admin/reservas/${reservationId}`);
 }
@@ -215,6 +325,32 @@ export async function deleteRejectedReservation(reservationId: string) {
   await db.delete(blockedDates).where(eq(blockedDates.reservationId, reservationId));
   await db.delete(reservations).where(eq(reservations.id, reservationId));
 
+  revalidateTag("blocked_dates");
+  revalidatePath("/");
+  revalidatePath("/admin/calendario");
   revalidatePath("/admin/reservas");
-  redirect("/admin/reservas");
+}
+
+export async function deleteCancelledReservation(reservationId: string) {
+  const { isAdmin } = await requireAdmin();
+  if (!isAdmin) throw new Error("Not authorized");
+
+  const rows = await db
+    .select({ status: reservations.status })
+    .from(reservations)
+    .where(eq(reservations.id, reservationId))
+    .limit(1);
+  const r = rows[0];
+  if (!r) throw new Error("Reservation not found");
+  if (r.status !== "cancelled") {
+    throw new Error("Solo se pueden borrar reservas canceladas.");
+  }
+
+  await db.delete(blockedDates).where(eq(blockedDates.reservationId, reservationId));
+  await db.delete(reservations).where(eq(reservations.id, reservationId));
+
+  revalidateTag("blocked_dates");
+  revalidatePath("/");
+  revalidatePath("/admin/calendario");
+  revalidatePath("/admin/reservas");
 }

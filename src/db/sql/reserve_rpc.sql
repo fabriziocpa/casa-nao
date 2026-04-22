@@ -1,4 +1,4 @@
--- Atomic reservation + block insertion.
+-- Atomic reservation request creation (pending status, no date blocking yet).
 -- Called by the reservation Server Action (service role).
 
 create or replace function public.create_reservation_with_blocks(
@@ -10,7 +10,6 @@ security definer
 as $$
 declare
   new_id uuid;
-  d date;
 begin
   -- Fail fast if any requested date is already blocked.
   if exists (
@@ -44,11 +43,6 @@ begin
     'pending'
   )
   returning id into new_id;
-
-  foreach d in array p_dates loop
-    insert into blocked_dates (date, reason, reservation_id)
-    values (d, 'reservation', new_id);
-  end loop;
 
   return new_id;
 end;
