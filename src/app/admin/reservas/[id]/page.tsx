@@ -4,11 +4,13 @@ import { getReservation } from "@/features/reservations/queries.admin";
 import {
   confirmReservation,
   rejectReservation,
+  cancelConfirmedReservation,
   updateAdminNotes,
   updateRejectedReservation,
   deleteRejectedReservation,
 } from "@/features/reservations/actions";
 import { RejectedActions } from "@/features/reservations/components/RejectedActions";
+import { ConfirmedActions } from "@/features/reservations/components/ConfirmedActions";
 import { formatUSDPrecise, formatUSD } from "@/lib/money";
 import { formatEs } from "@/lib/dates";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -39,6 +41,10 @@ export default async function ReservationDetailPage({
   const reject = async () => {
     "use server";
     await rejectReservation(r.id);
+  };
+  const cancelConfirmed = async () => {
+    "use server";
+    await cancelConfirmedReservation(r.id);
   };
   const saveNotes = async (fd: FormData) => {
     "use server";
@@ -133,6 +139,9 @@ export default async function ReservationDetailPage({
                 </button>
               </form>
             </>
+          ) : null}
+          {r.status === "confirmed" ? (
+            <ConfirmedActions cancelAction={cancelConfirmed} />
           ) : null}
           <a
             href={wa}
