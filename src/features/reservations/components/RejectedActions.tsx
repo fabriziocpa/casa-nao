@@ -1,6 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { PhoneInput } from "./PhoneInput";
+import { ActionPopup } from "./ActionPopup";
 
 type Props = {
   reservationId: string;
@@ -24,9 +27,22 @@ export function RejectedActions({
   updateAction,
   deleteAction,
 }: Props) {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const onDelete = () => {
+    startTransition(async () => {
+      try {
+        await deleteAction();
+        router.push("/admin/reservas");
+      } catch (error) {
+        setErrorMessage(toUserMessage(error));
+      }
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -34,16 +50,17 @@ export function RejectedActions({
         <button
           type="button"
           onClick={() => setEditing((v) => !v)}
-          className="rounded-full border border-line tracking-label text-[11px] px-5 py-2 hover:bg-sand/40 transition"
+          className="w-full sm:w-auto rounded-full border border-line tracking-label text-[11px] px-5 py-2 hover:bg-sand/40 transition"
         >
           {editing ? "Cerrar edición" : "Editar solicitud"}
         </button>
         <button
           type="button"
-          onClick={() => setConfirmingDelete(true)}
-          className="rounded-full bg-rose/70 text-ink tracking-label text-[11px] px-5 py-2 hover:bg-rose transition"
+          onClick={() => setConfirmDeleteOpen(true)}
+          disabled={pending}
+          className="w-full sm:w-auto rounded-full bg-rose/70 text-ink tracking-label text-[11px] px-5 py-2 hover:bg-rose transition disabled:opacity-40"
         >
-          Borrar solicitud
+          {pending ? "Borrando…" : "Borrar solicitud"}
         </button>
       </div>
 
@@ -63,7 +80,7 @@ export function RejectedActions({
           </label>
           <label className="block space-y-1">
             <span className="tracking-label text-[11px] text-ink/60">Celular</span>
-            <input name="phone" defaultValue={defaults.phone} className={inputCls} required />
+            <PhoneInput inputClassName={inputCls} defaultValue={defaults.phone} />
           </label>
           <label className="block space-y-1">
             <span className="tracking-label text-[11px] text-ink/60">Huéspedes</span>
@@ -94,35 +111,33 @@ export function RejectedActions({
         </form>
       ) : null}
 
-      {confirmingDelete ? (
-        <div className="rounded-md border border-rose/50 bg-rose/10 p-4 space-y-3">
-          <p className="text-sm text-ink">
-            ¿Seguro que deseas borrar esta solicitud rechazada? Esta acción no se puede deshacer.
-          </p>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() =>
-                startTransition(async () => {
-                  await deleteAction();
-                })
-              }
-              className="rounded-full bg-rose text-ink tracking-label text-[11px] px-5 py-2 disabled:opacity-40"
-            >
-              {pending ? "Borrando…" : "Sí, borrar"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmingDelete(false)}
-              disabled={pending}
-              className="rounded-full border border-line tracking-label text-[11px] px-5 py-2"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <ActionPopup
+        open={confirmDeleteOpen}
+        title="Eliminar del historial"
+        description="Esta solicitud rechazada se eliminará de forma permanente."
+        confirmLabel={pending ? "Borrando…" : "Sí, eliminar"}
+        cancelLabel="Volver"
+        tone="danger"
+        pending={pending}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => {
+          setConfirmDeleteOpen(false);
+          onDelete();
+        }}
+      />
+      <ActionPopup
+        open={Boolean(errorMessage)}
+        title="No se pudo completar"
+        description={errorMessage ?? ""}
+        confirmLabel="Entendido"
+        onClose={() => setErrorMessage(null)}
+        onConfirm={() => setErrorMessage(null)}
+      />
     </div>
   );
+}
+
+function toUserMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return "No se pudo completar la acción. Inténtalo nuevamente.";
 }

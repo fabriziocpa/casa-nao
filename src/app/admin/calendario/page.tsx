@@ -1,7 +1,7 @@
 import { addMonths, startOfMonth } from "date-fns";
-import { and, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, ne, or } from "drizzle-orm";
 import { db } from "@/db";
-import { blockedDates } from "@/db/schema";
+import { blockedDates, reservations } from "@/db/schema";
 import { toIso } from "@/lib/dates";
 import { AdminCalendarClient } from "./AdminCalendarClient";
 
@@ -13,7 +13,17 @@ export default async function AdminCalendarPage() {
   const rows = await db
     .select({ date: blockedDates.date, reason: blockedDates.reason })
     .from(blockedDates)
-    .where(and(gte(blockedDates.date, toIso(today)), lte(blockedDates.date, toIso(until))));
+    .leftJoin(reservations, eq(blockedDates.reservationId, reservations.id))
+    .where(
+      and(
+        gte(blockedDates.date, toIso(today)),
+        lte(blockedDates.date, toIso(until)),
+        or(
+          ne(blockedDates.reason, "reservation"),
+          eq(reservations.status, "confirmed"),
+        ),
+      ),
+    );
 
   const reasons = Object.fromEntries(rows.map((r) => [r.date, r.reason])) as Record<string, string>;
 

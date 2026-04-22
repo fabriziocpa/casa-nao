@@ -1,10 +1,11 @@
 import "server-only";
 
 import { addMonths, startOfDay } from "date-fns";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, ne, or } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+import { siteConfig } from "@/config/site";
 import { db } from "@/db";
-import { basePricing, blockedDates, pricingRules } from "@/db/schema";
+import { blockedDates, pricingRules, reservations } from "@/db/schema";
 import { toIso } from "@/lib/dates";
 import type { BasePricingInput, PricingRuleInput } from "./pricing";
 
@@ -15,7 +16,17 @@ export const getBlockedDatesList = unstable_cache(
     const rows = await db
       .select({ date: blockedDates.date })
       .from(blockedDates)
-      .where(and(gte(blockedDates.date, toIso(today)), lte(blockedDates.date, toIso(until))));
+      .leftJoin(reservations, eq(blockedDates.reservationId, reservations.id))
+      .where(
+        and(
+          gte(blockedDates.date, toIso(today)),
+          lte(blockedDates.date, toIso(until)),
+          or(
+            ne(blockedDates.reason, "reservation"),
+            eq(reservations.status, "confirmed"),
+          ),
+        ),
+      );
     return rows.map((r) => r.date);
   },
   ["reservations.blocked_dates"],
@@ -43,14 +54,10 @@ export const getActivePricingRules = unstable_cache(
 
 export const getBasePricing = unstable_cache(
   async (): Promise<BasePricingInput> => {
-    const rows = await db.select().from(basePricing).limit(1);
-    if (!rows[0]) {
-      return { nightlyCents: 50000, minNights: 2, maxGuests: 15 };
-    }
     return {
-      nightlyCents: rows[0].nightlyCents,
-      minNights: rows[0].minNights,
-      maxGuests: rows[0].maxGuests,
+      nightlyCents: siteConfig.baseNightlyCents,
+      minNights: siteConfig.lowSeasonMinNights,
+      maxGuests: siteConfig.maxGuests,
     };
   },
   ["reservations.base_pricing"],

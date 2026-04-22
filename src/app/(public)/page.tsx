@@ -16,45 +16,44 @@ export const revalidate = 120;
 
 export const metadata: Metadata = {
   description:
-    "Casa de lujo frente al mar en El Ñuro, Piura. Capacidad 1–15 huéspedes. Piscina infinita, vista al mar y acceso directo a la playa.",
+    "Casa de lujo frente al mar en El Ñuro, Piura. Piscina, vista al mar y acceso directo a la playa.",
 };
 
 const HERO_VIDEO = "/videos/OCEAN_ZOOM_IN.webm";
-const HERO_POSTER = "/images/FRONT.avif";
 
 const ROOMS = [
   {
-    name: "Primer cuarto principal",
-    detail: "1 cama king + 1 cama plaza y media",
+    name: "Habitación 1",
+    detail: "Familiar: 1 cama king + 1 cama de plaza y media",
     view: "Vista al mar",
     videoSrc: "/videos/MAIN_ROOM_1_VIEW.webm",
     poster: "/images/MAIN_ROOM_1.avif",
   },
   {
-    name: "Segundo cuarto principal",
-    detail: "1 cama king + 1 cama de 1 plaza",
+    name: "Habitación 2",
+    detail: "Familiar: 1 cama king + 1 cama de plaza y media",
     view: "Vista al mar",
     videoSrc: "/videos/SLIDING_COURTAINS.webm",
     poster: "/images/MAIN_ROOM_2.avif",
   },
   {
-    name: "Primera habitación",
-    detail: "2 camas de 2 plazas",
-    view: "Habitación",
+    name: "Habitación 3",
+    detail: "Compartida: 2 camas de 2 plazas",
+    view: "Habitación compartida",
     videoSrc: "/videos/ROOM_3_VIEW.webm",
     poster: "/images/ROOM_3.avif",
   },
   {
-    name: "Segunda habitación",
-    detail: "2 camas de 2 plazas",
-    view: "Habitación",
+    name: "Habitación 4",
+    detail: "Compartida: 2 camas de 2 plazas",
+    view: "Habitación compartida",
     videoSrc: "/videos/ROOM_4_VIEW.webm",
     poster: "/images/ROOM_4.avif",
   },
   {
-    name: "Tercera habitación",
-    detail: "2 camas de 2 plazas",
-    view: "Vista parcial al mar",
+    name: "Habitación 5",
+    detail: "Compartida: 2 camas de 2 plazas",
+    view: "Habitación compartida",
     videoSrc: "/videos/ROOM_4_VIEW.webm",
     poster: "/images/ROOM_5_3.avif",
   },
@@ -88,7 +87,10 @@ const NIGHT_SLIDES = [
   { src: "/images/POOL_NIGHT.avif", alt: "Piscina de noche" },
   { src: "/images/OUTSIDE_NIGHT.avif", alt: "Exterior de noche" },
   { src: "/images/INSIDE_NIGHT.avif", alt: "Interior de noche" },
-  { src: "/images/INSIDE_NIGHT_2.avif", alt: "Interior de noche con luces cálidas" },
+  {
+    src: "/images/INSIDE_NIGHT_2.avif",
+    alt: "Interior de noche con luces cálidas",
+  },
   { src: "/images/INSIDE_NIGHT_3.avif", alt: "Espacios interiores de noche" },
 ];
 
@@ -104,7 +106,6 @@ export default async function LandingPage() {
       >
         <HeroVideo
           src={HERO_VIDEO}
-          poster={HERO_POSTER}
           className="absolute inset-0 h-full w-full object-cover object-[center_60%]"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-transparent to-ink/70" />
@@ -117,7 +118,7 @@ export default async function LandingPage() {
             priority
           />
           <p className="mt-8 tracking-label text-xs md:text-sm text-bg/90">
-            LUXURY LIVING
+            DONDE EL LUJO SE ENCUENTRA CON LA CALMA
           </p>
           <Link
             href="#reserva"
@@ -136,16 +137,14 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-3xl px-6 py-24 md:py-32 text-center">
         <FadeIn className="space-y-6">
           <h2 className="text-3xl md:text-5xl font-display leading-[1.1]">
-            Detrás del Cerro del Encanto, un lugar envuelto en mitología y mar.
+            Bienvenido a CASA NAO
           </h2>
           <p className="text-ink/75 text-lg leading-relaxed">
-            CASA NAO se encuentra detrás del majestuoso Cerro del Encanto, un
-            lugar envuelto en mitología, energía y misticismo. Este ícono local
-            forma parte esencial de la magia que se vive en este entorno. En
-            temporada, las ballenas pasan frente a la casa, ofreciendo un
-            espectáculo natural inolvidable. Además, la zona conserva su
-            autenticidad pesquera, donde los pescadores locales mantienen viva
-            la tradición y el encanto cultural del lugar.
+            Aquí, los días comienzan con el sonido de las olas, y terminan con
+            atardeceres que parecen hechos a medida. Piscina, servicio
+            personalizado y un entorno natural privilegiado se combinan mucho
+            más que una estadía: una experiencia. No solo un destino, sino una
+            forma de vivir en el mar.
           </p>
         </FadeIn>
       </section>
@@ -184,9 +183,9 @@ export default async function LandingPage() {
             </h2>
           </div>
           <p className="hidden md:block text-sm text-ink/70 max-w-sm">
-            Dos cuartos principales con vista al mar, una habitación con vista
-            parcial, y dos habitaciones más. Todas con aire acondicionado y ropa
-            de cama de lino.
+            Habitaciones 1 y 2 familiares con cama king y cama de plaza y media.
+            Habitaciones 3, 4 y 5 compartidas, cada una con dos camas de 2
+            plazas.
           </p>
         </FadeIn>
         <StaggerChildren className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -270,6 +269,9 @@ export default async function LandingPage() {
               Piscina con borde infinito
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
+              Balcón con vista al susent y al mar
+            </li>
+            <li className="py-3 border-t border-line text-sm text-ink/80">
               Parrilla con caja china
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
@@ -279,7 +281,7 @@ export default async function LandingPage() {
               Internet satelital
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
-              Aire acondicionado en cuartos principales
+              Aire acondicionado en todos los cuartos
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
               TVs 65&quot; y 70&quot; en habitaciones
@@ -298,6 +300,9 @@ export default async function LandingPage() {
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
               Vista al mar
+            </li>
+            <li className="py-3 border-t border-line text-sm text-ink/80">
+              Balcón con vista al susent y al mar
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
               Acceso directo a playa

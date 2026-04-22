@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, ne, or, sql } from "drizzle-orm";
 import { startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { db } from "@/db";
 import { reservations, blockedDates } from "@/db/schema";
@@ -58,7 +58,14 @@ export async function getDashboardKpis() {
       pending: sql<number>`count(*) filter (where ${reservations.status} = 'pending')::int`,
       confirmedThisMonth: sql<number>`count(*) filter (where ${reservations.status} = 'confirmed' and ${reservations.checkIn} >= ${monthStart})::int`,
       revenue: sql<number>`coalesce(sum(${reservations.totalCents}) filter (where ${reservations.status} = 'confirmed' and ${reservations.checkIn} >= ${monthStart}), 0)::int`,
-      occupancy: sql<number>`(select count(*)::int from ${blockedDates} where ${blockedDates.date} >= ${monthStart} and ${blockedDates.date} <= ${monthEnd})`,
+      occupancy: sql<number>`(
+        select count(*)::int
+        from ${blockedDates} bd
+        left join ${reservations} r on bd.reservation_id = r.id
+        where bd.date >= ${monthStart}
+          and bd.date <= ${monthEnd}
+          and (bd.reason <> 'reservation' or r.status = 'confirmed')
+      )`,
     })
     .from(reservations);
 
@@ -86,7 +93,17 @@ export async function getMonthHeatmap(monthOffset = 0) {
   const rows = await db
     .select({ date: blockedDates.date, reason: blockedDates.reason })
     .from(blockedDates)
-    .where(and(gte(blockedDates.date, start), sql`${blockedDates.date} <= ${end}`));
+    .leftJoin(reservations, eq(blockedDates.reservationId, reservations.id))
+    .where(
+      and(
+        gte(blockedDates.date, start),
+        sql`${blockedDates.date} <= ${end}`,
+        or(
+          ne(blockedDates.reason, "reservation"),
+          eq(reservations.status, "confirmed"),
+        ),
+      ),
+    );
   const map: Record<string, string> = {};
   for (const r of rows) map[r.date] = r.reason;
   return { start, end, map };
