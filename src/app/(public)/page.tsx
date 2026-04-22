@@ -88,7 +88,10 @@ const NIGHT_SLIDES = [
   { src: "/images/POOL_NIGHT.avif", alt: "Piscina de noche" },
   { src: "/images/OUTSIDE_NIGHT.avif", alt: "Exterior de noche" },
   { src: "/images/INSIDE_NIGHT.avif", alt: "Interior de noche" },
-  { src: "/images/INSIDE_NIGHT_2.avif", alt: "Interior de noche con luces cálidas" },
+  {
+    src: "/images/INSIDE_NIGHT_2.avif",
+    alt: "Interior de noche con luces cálidas",
+  },
   { src: "/images/INSIDE_NIGHT_3.avif", alt: "Espacios interiores de noche" },
 ];
 
@@ -104,7 +107,6 @@ export default async function LandingPage() {
       >
         <HeroVideo
           src={HERO_VIDEO}
-          poster={HERO_POSTER}
           className="absolute inset-0 h-full w-full object-cover object-[center_60%]"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-transparent to-ink/70" />
@@ -117,7 +119,7 @@ export default async function LandingPage() {
             priority
           />
           <p className="mt-8 tracking-label text-xs md:text-sm text-bg/90">
-            LUXURY LIVING
+            DONDE EL LUJO SE ENCUENTRA CON LA CALMA
           </p>
           <Link
             href="#reserva"
@@ -184,9 +186,9 @@ export default async function LandingPage() {
             </h2>
           </div>
           <p className="hidden md:block text-sm text-ink/70 max-w-sm">
-            Habitaciones 1 y 2 familiares con cama king y cama de plaza y
-            media. Habitaciones 3, 4 y 5 compartidas, cada una con dos camas
-            de 2 plazas.
+            Habitaciones 1 y 2 familiares con cama king y cama de plaza y media.
+            Habitaciones 3, 4 y 5 compartidas, cada una con dos camas de 2
+            plazas.
           </p>
         </FadeIn>
         <StaggerChildren className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -270,6 +272,9 @@ export default async function LandingPage() {
               Piscina con borde infinito
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
+              Balcón con vista al susent y al mar
+            </li>
+            <li className="py-3 border-t border-line text-sm text-ink/80">
               Parrilla con caja china
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
@@ -279,7 +284,7 @@ export default async function LandingPage() {
               Internet satelital
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
-              Aire acondicionado en cuartos principales
+              Aire acondicionado en todos los cuartos
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
               TVs 65&quot; y 70&quot; en habitaciones
