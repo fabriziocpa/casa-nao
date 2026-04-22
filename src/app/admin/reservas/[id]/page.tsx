@@ -11,6 +11,7 @@ import {
 } from "@/features/reservations/actions";
 import { RejectedActions } from "@/features/reservations/components/RejectedActions";
 import { ConfirmedActions } from "@/features/reservations/components/ConfirmedActions";
+import { PendingActions } from "@/features/reservations/components/PendingActions";
 import { formatUSDPrecise, formatUSD } from "@/lib/money";
 import { formatEs } from "@/lib/dates";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -125,21 +126,10 @@ export default async function ReservationDetailPage({
 
       <section className="rounded-xl border border-line bg-white/60 p-5 space-y-4">
         <p className="tracking-label text-[11px] text-ink/60">Acciones</p>
+        {r.status === "pending" ? (
+          <PendingActions confirmAction={confirm} rejectAction={reject} />
+        ) : null}
         <div className="flex flex-wrap gap-3">
-          {r.status === "pending" ? (
-            <>
-              <form action={confirm}>
-                <button className="rounded-full bg-teal text-white tracking-label text-[11px] px-5 py-2 hover:bg-deep-ocean transition">
-                  Confirmar
-                </button>
-              </form>
-              <form action={reject}>
-                <button className="rounded-full bg-rose/70 text-ink tracking-label text-[11px] px-5 py-2 hover:bg-rose transition">
-                  Rechazar
-                </button>
-              </form>
-            </>
-          ) : null}
           {r.status === "confirmed" ? (
             <ConfirmedActions cancelAction={cancelConfirmed} />
           ) : null}

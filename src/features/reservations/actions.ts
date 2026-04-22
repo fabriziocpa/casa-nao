@@ -183,7 +183,7 @@ export async function confirmReservation(reservationId: string) {
 
     if (inserted.length !== nightDates.length) {
       throw new Error(
-        "No se pudo confirmar porque una o más fechas ya están bloqueadas.",
+        "No se pudo confirmar: las fechas ya están ocupadas o bloqueadas.",
       );
     }
   });

@@ -30,7 +30,6 @@ const ruleSchema = z
     mode: z.enum(["manual", "discount"]).default("manual"),
     nightlyDollars: z.coerce.number().optional(),
     discountPct: z.coerce.number().optional(),
-    roundToInteger: boolish,
     minNights: z
       .union([z.coerce.number().int().min(1), z.literal(""), z.null()])
       .transform((v) => (v === "" || v === null ? null : (v as number))),
@@ -64,16 +63,12 @@ export async function upsertPricingRule(formData: FormData) {
       throw new Error("Configura primero la tarifa base.");
     }
     const discountedCents = baseCents * (1 - data.discountPct / 100);
-    nightlyCents = data.roundToInteger
-      ? Math.round(discountedCents / 100) * 100
-      : Math.round(discountedCents);
+    nightlyCents = Math.round(discountedCents);
   } else {
     if (data.nightlyDollars == null || isNaN(data.nightlyDollars) || data.nightlyDollars < 1) {
       throw new Error("Ingresa un precio válido (USD / noche).");
     }
-    nightlyCents = data.roundToInteger
-      ? Math.round(data.nightlyDollars) * 100
-      : Math.round(data.nightlyDollars * 100);
+    nightlyCents = Math.round(data.nightlyDollars * 100);
   }
 
   const payload = {

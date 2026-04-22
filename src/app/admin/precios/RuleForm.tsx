@@ -29,19 +29,15 @@ const inputCls =
 
 export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props) {
   const [mode, setMode] = useState<Mode>("manual");
-  const [roundToInt, setRoundToInt] = useState(false);
   const [discountPct, setDiscountPct] = useState<string>("10");
   const [nightlyDollars, setNightlyDollars] = useState<string>(
     rule?.nightlyCents != null ? String(rule.nightlyCents / 100) : "",
   );
 
   const previewCents = useMemo(
-    () => computeCents({ mode, roundToInt, discountPct, nightlyDollars, baseNightlyCents }),
-    [mode, roundToInt, discountPct, nightlyDollars, baseNightlyCents],
+    () => computeCents({ mode, discountPct, nightlyDollars, baseNightlyCents }),
+    [mode, discountPct, nightlyDollars, baseNightlyCents],
   );
-
-  const savings =
-    mode === "discount" && previewCents != null ? baseNightlyCents - previewCents : null;
 
   return (
     <form
@@ -50,7 +46,7 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
     >
       {rule?.id ? <input type="hidden" name="id" value={rule.id} /> : null}
 
-      <PreviewCard previewCents={previewCents} savings={savings} mode={mode} />
+      <PreviewCard previewCents={previewCents} />
 
       <div className="space-y-4">
         <h3 className="tracking-label text-[11px] text-ink/60">Datos de la temporada</h3>
@@ -121,7 +117,7 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
           />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="max-w-sm">
           {mode === "manual" ? (
             <Field label="Precio por noche (USD)">
               <input
@@ -156,17 +152,6 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
               </div>
             </Field>
           )}
-          <Field label="Redondeo">
-            <label className="flex items-center gap-2 h-10 text-sm text-ink/80">
-              <input
-                type="checkbox"
-                name="roundToInteger"
-                checked={roundToInt}
-                onChange={(e) => setRoundToInt(e.target.checked)}
-              />
-              Redondear a un número entero
-            </label>
-          </Field>
         </div>
       </div>
 
@@ -207,12 +192,8 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
 
 function PreviewCard({
   previewCents,
-  savings,
-  mode,
 }: {
   previewCents: number | null;
-  savings: number | null;
-  mode: Mode;
 }) {
   return (
     <div className="rounded-lg bg-gradient-to-br from-sand/60 to-sand/20 border border-line p-5 flex items-center justify-between gap-4 flex-wrap">
@@ -223,13 +204,6 @@ function PreviewCard({
         </p>
         <p className="text-xs text-ink/60">por noche</p>
       </div>
-      {mode === "discount" && savings != null && savings > 0 ? (
-        <div className="text-right">
-          <p className="tracking-label text-[11px] text-ink/60">Ahorro por noche</p>
-          <p className="font-display text-2xl text-teal">-{formatUSDPrecise(savings)}</p>
-          <p className="text-xs text-ink/60">vs. tarifa base</p>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -312,13 +286,11 @@ function Field({
 
 function computeCents({
   mode,
-  roundToInt,
   discountPct,
   nightlyDollars,
   baseNightlyCents,
 }: {
   mode: Mode;
-  roundToInt: boolean;
   discountPct: string;
   nightlyDollars: string;
   baseNightlyCents: number;
@@ -327,9 +299,9 @@ function computeCents({
     const pct = Number(discountPct);
     if (!Number.isFinite(pct) || pct <= 0 || pct >= 100 || !baseNightlyCents) return null;
     const cents = baseNightlyCents * (1 - pct / 100);
-    return roundToInt ? Math.round(cents / 100) * 100 : Math.round(cents);
+    return Math.round(cents);
   }
   const usd = Number(nightlyDollars);
   if (!Number.isFinite(usd) || usd <= 0) return null;
-  return roundToInt ? Math.round(usd) * 100 : Math.round(usd * 100);
+  return Math.round(usd * 100);
 }
