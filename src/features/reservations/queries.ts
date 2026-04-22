@@ -45,7 +45,7 @@ export const getBasePricing = unstable_cache(
   async (): Promise<BasePricingInput> => {
     const rows = await db.select().from(basePricing).limit(1);
     if (!rows[0]) {
-      return { nightlyCents: 50000, minNights: 2, maxGuests: 15 };
+      return { nightlyCents: 70000, minNights: 2, maxGuests: 15 };
     }
     return {
       nightlyCents: rows[0].nightlyCents,
