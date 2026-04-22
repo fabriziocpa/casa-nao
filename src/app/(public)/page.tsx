@@ -16,11 +16,10 @@ export const revalidate = 120;
 
 export const metadata: Metadata = {
   description:
-    "Casa de lujo frente al mar en El Ñuro, Piura. Capacidad 1–15 huéspedes. Piscina infinita, vista al mar y acceso directo a la playa.",
+    "Casa de lujo frente al mar en El Ñuro, Piura. Piscina, vista al mar y acceso directo a la playa.",
 };
 
 const HERO_VIDEO = "/videos/OCEAN_ZOOM_IN.webm";
-const HERO_POSTER = "/images/FRONT.avif";
 
 const ROOMS = [
   {
@@ -138,16 +137,14 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-3xl px-6 py-24 md:py-32 text-center">
         <FadeIn className="space-y-6">
           <h2 className="text-3xl md:text-5xl font-display leading-[1.1]">
-            Detrás del Cerro del Encanto, un lugar envuelto en mitología y mar.
+            Bienvenido a CASA NAO
           </h2>
           <p className="text-ink/75 text-lg leading-relaxed">
-            CASA NAO se encuentra detrás del majestuoso Cerro del Encanto, un
-            lugar envuelto en mitología, energía y misticismo. Este ícono local
-            forma parte esencial de la magia que se vive en este entorno. En
-            temporada, las ballenas pasan frente a la casa, ofreciendo un
-            espectáculo natural inolvidable. Además, la zona conserva su
-            autenticidad pesquera, donde los pescadores locales mantienen viva
-            la tradición y el encanto cultural del lugar.
+            Aquí, los días comienzan con el sonido de las olas, y terminan con
+            atardeceres que parecen hechos a medida. Piscina, servicio
+            personalizado y un entorno natural privilegiado se combinan mucho
+            más que una estadía: una experiencia. No solo un destino, sino una
+            forma de vivir en el mar.
           </p>
         </FadeIn>
       </section>
