@@ -8,7 +8,11 @@
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(npx next *)",
       "Bash(git stash *)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/fabriziocontreras/Documents/Universidad/Code/Project/casa-nao/public/images/POOL_NIGHT.avif)",
+      "Bash(sips -s format jpeg /Users/fabriziocontreras/Documents/Universidad/Code/Project/casa-nao/public/images/POOL_NIGHT.avif --resampleWidth 1200 --out /Users/fabriziocontreras/Documents/Universidad/Code/Project/casa-nao/public/images/POOL_NIGHT_OG.jpg)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/fabriziocontreras/Documents/Universidad/Code/Project/casa-nao/public/images/POOL_NIGHT_OG.jpg)",
+      "Bash(pnpm typecheck *)"
     ]
   }
 }

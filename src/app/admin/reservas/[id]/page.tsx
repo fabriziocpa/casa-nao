@@ -17,7 +17,7 @@ import { CancelledActions } from "@/features/reservations/components/CancelledAc
 import { formatUSDPrecise, formatUSD } from "@/lib/money";
 import { formatEs } from "@/lib/dates";
 import { whatsappLink } from "@/lib/whatsapp";
-import { StatusBadge } from "../../page";
+import { StatusBadge } from "@/components/layout/StatusBadge";
 import type { NightlyBreakdown } from "@/types";
 
 export default async function ReservationDetailPage({

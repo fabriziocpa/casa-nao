@@ -1,5 +1,5 @@
-import Image from "next/image";
 import type { Metadata } from "next";
+import { Logo } from "@/components/logos";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = { title: "Acceso" };
@@ -21,13 +21,7 @@ export default async function LoginPage({
     <main className="min-h-screen flex items-center justify-center bg-bg px-6">
       <div className="w-full max-w-sm space-y-8">
         <div className="flex justify-center">
-          <Image
-            src="/logos/logo-black.svg"
-            alt="CASA NAO"
-            width={220}
-            height={72}
-            priority
-          />
+          <Logo className="h-[72px] w-[220px] text-ink" />
         </div>
         <div className="text-center space-y-2">
           <p className="tracking-label text-xs text-ink/60">

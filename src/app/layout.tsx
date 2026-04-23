@@ -19,6 +19,13 @@ const fraunces = Fraunces({
   axes: ["opsz", "SOFT"],
 });
 
+const OG_IMAGE = {
+  url: "/images/POOL_NIGHT_OG.jpg",
+  width: 1200,
+  height: 900,
+  alt: "CASA NAO — Piscina frente al mar de noche",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
@@ -31,8 +38,16 @@ export const metadata: Metadata = {
     locale: siteConfig.locale,
     url: siteConfig.url,
     siteName: siteConfig.name,
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [OG_IMAGE],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [OG_IMAGE.url],
+  },
   alternates: { canonical: siteConfig.url },
   robots: { index: true, follow: true },
 };

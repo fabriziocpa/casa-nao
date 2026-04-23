@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { StatusBadge } from "@/components/layout/StatusBadge";
 import { getDashboardKpis, getMonthHeatmap } from "@/features/reservations/queries.admin";
 import { formatUSDPrecise } from "@/lib/money";
 import { formatEs } from "@/lib/dates";
@@ -103,27 +104,3 @@ function Kpi({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    pending: "bg-sand text-ink",
-    confirmed: "bg-teal text-white",
-    rejected: "bg-rose/70 text-ink",
-    cancelled: "bg-ink/80 text-bg",
-  };
-  const labels: Record<string, string> = {
-    pending: "Pendiente",
-    confirmed: "Confirmada",
-    rejected: "Rechazada",
-    cancelled: "Cancelada",
-  };
-  return (
-    <span
-      className={
-        "inline-flex items-center tracking-label text-[10px] px-2 py-0.5 rounded-full " +
-        (map[status] ?? "bg-sand text-ink")
-      }
-    >
-      {labels[status] ?? status}
-    </span>
-  );
-}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { listReservations } from "@/features/reservations/queries.admin";
 import { formatUSDPrecise } from "@/lib/money";
 import { formatEs } from "@/lib/dates";
-import { StatusBadge } from "../page";
+import { StatusBadge } from "@/components/layout/StatusBadge";
 
 type StatusFilter = "all" | "pending" | "confirmed" | "rejected" | "cancelled";
 
