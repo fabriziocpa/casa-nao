@@ -16,11 +16,60 @@ type Props = {
   base: BasePricingInput;
 };
 
+type DocType = "DNI" | "CE" | "PASSPORT";
+
 const initial: ReservationFormState = null;
+
+const MESSAGE_MAX = 1000;
+const NAME_MAX = 50;
+const EMAIL_MAX = 254;
+const NAME_PATTERN = "[\\p{L}][\\p{L} '.\\-]{1,49}";
+
+const DOC_CONFIG: Record<
+  DocType,
+  {
+    inputMode: "numeric" | "text";
+    maxLength: number;
+    pattern: string;
+    placeholder: string;
+    title: string;
+    sanitize: (value: string) => string;
+  }
+> = {
+  DNI: {
+    inputMode: "numeric",
+    maxLength: 8,
+    pattern: "\\d{8}",
+    placeholder: "12345678",
+    title: "DNI de 8 dígitos",
+    sanitize: (value) => value.replace(/\D/g, "").slice(0, 8),
+  },
+  CE: {
+    inputMode: "numeric",
+    maxLength: 9,
+    pattern: "\\d{9}",
+    placeholder: "123456789",
+    title: "Carné de extranjería de 9 dígitos",
+    sanitize: (value) => value.replace(/\D/g, "").slice(0, 9),
+  },
+  PASSPORT: {
+    inputMode: "text",
+    maxLength: 12,
+    pattern: "[A-Za-z0-9]{6,12}",
+    placeholder: "A1234567",
+    title: "Pasaporte alfanumérico de 6 a 12 caracteres",
+    sanitize: (value) => value.replace(/[^A-Za-z0-9]/g, "").slice(0, 12).toUpperCase(),
+  },
+};
 
 export function ReservationForm({ blockedIso, rules, base }: Props) {
   const [range, setRange] = useState<DateRange | undefined>();
-  const [docType, setDocType] = useState<"DNI" | "CE" | "PASSPORT">("DNI");
+  const [docType, setDocType] = useState<DocType>("DNI");
+  const [docNumber, setDocNumber] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [guests, setGuests] = useState<number>(2);
   const [state, action, pending] = useActionState(submitReservation, initial);
 
@@ -39,8 +88,15 @@ export function ReservationForm({ blockedIso, rules, base }: Props) {
   const err = state && !state.ok ? state : null;
   const fe = err?.fieldErrors ?? {};
 
+  const docCfg = DOC_CONFIG[docType];
+
+  const handleDocTypeChange = (next: DocType) => {
+    setDocType(next);
+    setDocNumber((prev) => DOC_CONFIG[next].sanitize(prev));
+  };
+
   return (
-    <form action={action} className="grid gap-10 lg:grid-cols-12">
+    <form action={action} className="grid gap-10 lg:grid-cols-12" noValidate={false}>
       <div className="lg:col-span-7 space-y-8">
         <div className="space-y-3">
           <p className="tracking-label text-xs text-ink/60">1 · Elige tus fechas</p>
@@ -58,7 +114,7 @@ export function ReservationForm({ blockedIso, rules, base }: Props) {
               <select
                 name="docType"
                 value={docType}
-                onChange={(e) => setDocType(e.target.value as typeof docType)}
+                onChange={(e) => handleDocTypeChange(e.target.value as DocType)}
                 className={selectCls}
               >
                 <option value="DNI">DNI</option>
@@ -70,18 +126,58 @@ export function ReservationForm({ blockedIso, rules, base }: Props) {
               <input
                 name="docNumber"
                 className={inputCls}
-                inputMode={docType === "PASSPORT" ? "text" : "numeric"}
+                value={docNumber}
+                onChange={(e) => setDocNumber(docCfg.sanitize(e.target.value))}
+                inputMode={docCfg.inputMode}
+                maxLength={docCfg.maxLength}
+                pattern={docCfg.pattern}
+                placeholder={docCfg.placeholder}
+                title={docCfg.title}
+                autoComplete="off"
+                spellCheck={false}
                 required
               />
             </Field>
             <Field label="Apellidos" error={fe.lastName}>
-              <input name="lastName" className={inputCls} required autoComplete="family-name" />
+              <input
+                name="lastName"
+                className={inputCls}
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value.slice(0, NAME_MAX))}
+                maxLength={NAME_MAX}
+                minLength={2}
+                pattern={NAME_PATTERN}
+                title="Solo letras, espacios, apóstrofes o guiones"
+                autoComplete="family-name"
+                required
+              />
             </Field>
             <Field label="Nombres" error={fe.firstName}>
-              <input name="firstName" className={inputCls} required autoComplete="given-name" />
+              <input
+                name="firstName"
+                className={inputCls}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value.slice(0, NAME_MAX))}
+                maxLength={NAME_MAX}
+                minLength={2}
+                pattern={NAME_PATTERN}
+                title="Solo letras, espacios, apóstrofes o guiones"
+                autoComplete="given-name"
+                required
+              />
             </Field>
             <Field label="Correo" error={fe.email}>
-              <input name="email" type="email" className={inputCls} required autoComplete="email" />
+              <input
+                name="email"
+                type="email"
+                className={inputCls}
+                value={email}
+                onChange={(e) => setEmail(e.target.value.slice(0, EMAIL_MAX))}
+                maxLength={EMAIL_MAX}
+                autoComplete="email"
+                spellCheck={false}
+                required
+              />
             </Field>
             <Field label="Celular" error={fe.phone}>
               <PhoneInput inputClassName={inputCls} error={Boolean(fe.phone)} />
@@ -92,8 +188,13 @@ export function ReservationForm({ blockedIso, rules, base }: Props) {
                 type="number"
                 min={1}
                 max={15}
+                step={1}
                 value={guests}
-                onChange={(e) => setGuests(Number(e.target.value))}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  if (Number.isNaN(next)) return setGuests(1);
+                  setGuests(Math.min(15, Math.max(1, Math.floor(next))));
+                }}
                 className={inputCls}
                 required
               />
@@ -102,13 +203,22 @@ export function ReservationForm({ blockedIso, rules, base }: Props) {
         </div>
 
         <div className="space-y-2">
-          <p className="tracking-label text-xs text-ink/60">3 · Mensaje (opcional)</p>
+          <div className="flex items-baseline justify-between">
+            <p className="tracking-label text-xs text-ink/60">3 · Mensaje (opcional)</p>
+            <p className="text-[11px] text-ink/50 tabular-nums">
+              {message.length}/{MESSAGE_MAX}
+            </p>
+          </div>
           <textarea
             name="message"
             rows={4}
+            value={message}
+            onChange={(e) => setMessage(e.target.value.slice(0, MESSAGE_MAX))}
+            maxLength={MESSAGE_MAX}
             className={cn(inputCls, "h-auto py-2")}
             placeholder="Cuéntanos si celebran algo, necesitan chef, transporte, etc."
           />
+          {fe.message ? <p className="text-sm text-rose-700">{fe.message}</p> : null}
         </div>
 
         <div className="space-y-3">
@@ -148,7 +258,7 @@ export function ReservationForm({ blockedIso, rules, base }: Props) {
 }
 
 const inputCls =
-  "w-full h-10 rounded-md border border-line bg-white/70 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal";
+  "w-full h-10 rounded-md border border-line bg-white/70 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal invalid:border-rose-500/60";
 const selectCls = inputCls + " appearance-none";
 
 function Field({

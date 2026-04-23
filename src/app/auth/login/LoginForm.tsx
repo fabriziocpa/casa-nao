@@ -18,7 +18,9 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
           type="email"
           autoComplete="email"
           required
-          className="w-full rounded-md border border-line bg-white/70 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
+          maxLength={254}
+          spellCheck={false}
+          className="w-full rounded-md border border-line bg-white/70 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal invalid:border-rose-500/60"
           placeholder="tu@correo.com"
         />
       </label>
@@ -29,7 +31,9 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
           type="password"
           autoComplete="current-password"
           required
-          className="w-full rounded-md border border-line bg-white/70 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
+          minLength={1}
+          maxLength={128}
+          className="w-full rounded-md border border-line bg-white/70 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal invalid:border-rose-500/60"
           placeholder="••••••••"
         />
       </label>

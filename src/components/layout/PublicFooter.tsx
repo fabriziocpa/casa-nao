@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/logos";
 import { siteConfig } from "@/config/site";
 
 export function PublicFooter({
@@ -23,12 +23,7 @@ export function PublicFooter({
     <footer className="border-t border-bg/20 bg-ink text-bg">
       <div className="mx-auto max-w-7xl px-6 py-16 grid gap-12 md:grid-cols-4">
         <div className="space-y-4">
-          <Image
-            src="/logos/logo-white.svg"
-            alt="CASA NAO"
-            width={180}
-            height={60}
-          />
+          <Logo className="h-[60px] w-[180px] text-bg" />
           <p className="text-sm text-bg/75 max-w-xs">{address}</p>
         </div>
         <div className="space-y-3">
