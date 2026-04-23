@@ -4,6 +4,8 @@ const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida");
 
+const nameRegex = /^[\p{L}][\p{L} '.\-]{1,49}$/u;
+
 const docRefinement = (type: "DNI" | "CE" | "PASSPORT", n: string) => {
   const value = n.trim();
   if (type === "DNI") return /^\d{8}$/.test(value);
@@ -25,12 +27,30 @@ export const reservationInputSchema = z
     checkOut: isoDate,
     guests: z.coerce.number().int().min(1, "Mínimo 1 huésped").max(15, "Máximo 15 huéspedes"),
     docType: z.enum(["DNI", "CE", "PASSPORT"]),
-    docNumber: z.string().trim().min(6, "Documento demasiado corto").max(20),
-    firstName: z.string().trim().min(2, "Ingresa tus nombres"),
-    lastName: z.string().trim().min(2, "Ingresa tus apellidos"),
-    email: z.string().trim().email("Correo inválido"),
+    docNumber: z
+      .string()
+      .trim()
+      .min(6, "Documento demasiado corto")
+      .max(20, "Documento demasiado largo"),
+    firstName: z
+      .string()
+      .trim()
+      .min(2, "Ingresa tus nombres")
+      .max(50, "Máximo 50 caracteres")
+      .regex(nameRegex, "Nombre inválido"),
+    lastName: z
+      .string()
+      .trim()
+      .min(2, "Ingresa tus apellidos")
+      .max(50, "Máximo 50 caracteres")
+      .regex(nameRegex, "Apellido inválido"),
+    email: z
+      .string()
+      .trim()
+      .max(254, "Correo demasiado largo")
+      .email("Correo inválido"),
     phone: phoneE164Schema,
-    message: z.string().trim().max(1000).optional().or(z.literal("")),
+    message: z.string().trim().max(1000, "Máximo 1000 caracteres").optional().or(z.literal("")),
     consent: z
       .union([z.literal("on"), z.literal(true), z.literal("true")])
       .transform(() => true)

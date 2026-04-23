@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Logo } from "@/components/logos";
 import { HeroVideo } from "@/components/media/HeroVideo";
 import { NightCarousel } from "@/components/media/NightCarousel";
 import { RoomCard } from "@/components/layout/RoomCard";
@@ -110,13 +111,7 @@ export default async function LandingPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-transparent to-ink/70" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 text-bg">
-          <Image
-            src="/logos/logo-white.svg"
-            alt="Logo CASA NAO"
-            width={112}
-            height={112}
-            priority
-          />
+          <Logo className="h-[112px] w-[112px] text-bg" />
           <p className="mt-8 tracking-label text-xs md:text-sm text-bg/90">
             DONDE EL LUJO SE ENCUENTRA CON LA CALMA
           </p>

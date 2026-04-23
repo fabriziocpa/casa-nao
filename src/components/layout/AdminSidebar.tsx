@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "@/components/logos";
 import { adminNav } from "@/config/nav";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,7 @@ export function AdminSidebar({ onSignOut }: { onSignOut: () => void }) {
     <aside className="hidden md:flex md:w-64 shrink-0 flex-col border-r border-line bg-white/60 h-screen sticky top-0">
       <div className="p-6 border-b border-line">
         <Link href="/admin" aria-label="CASA NAO — Admin">
-          <Image src="/logos/logo-black.svg" alt="CASA NAO" width={160} height={54} />
+          <Logo className="h-[54px] w-[160px] text-ink" />
         </Link>
         <p className="tracking-label text-[10px] text-ink/60 mt-2">Panel de administración</p>
       </div>

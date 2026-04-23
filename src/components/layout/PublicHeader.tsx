@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { NaoLogo } from "@/components/logos";
 import { publicNav } from "@/config/nav";
 import { cn } from "@/lib/utils";
 
@@ -45,13 +45,7 @@ export function PublicHeader() {
     >
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center" aria-label="CASA NAO — Inicio">
-          <Image
-            src="/logos/nao-white.svg"
-            alt="CASA NAO"
-            width={90}
-            height={30}
-            priority
-          />
+          <NaoLogo className="h-[30px] w-[90px] text-bg" />
         </Link>
         <nav className="hidden md:flex items-center gap-8 tracking-label text-xs">
           {publicNav.map((item) => (

@@ -5,9 +5,9 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient, getAdminEmails } from "@/lib/supabase/server";
 
 const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-  redirectTo: z.string().optional(),
+  email: z.string().trim().max(254).email(),
+  password: z.string().min(1).max(128),
+  redirectTo: z.string().max(2048).optional(),
 });
 
 export type LoginState =
