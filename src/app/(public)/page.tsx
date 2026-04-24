@@ -76,9 +76,9 @@ const COMMON_SPACES = [
     poster: "/images/INSIDE_NIGHT_3.avif",
   },
   {
-    label: "Terraza",
-    title: "Terraza sobre el mar",
-    copy: "Parrilla, caja china y kamado frente a la piscina de borde infinito.",
+    label: "Balcón",
+    title: "Balcón con vista al mar",
+    copy: "Vista al mar y a la piscina de borde infinito.",
     videoSrc: "/videos/TOUR_TERRACE_360.webm",
     poster: "/images/TERRACE.avif",
   },
@@ -134,12 +134,14 @@ export default async function LandingPage() {
           <h2 className="text-3xl md:text-5xl font-display leading-[1.1]">
             Bienvenido a CASA NAO
           </h2>
+          <h3 className="text-2xl font-display leading-[1.1]">
+            Donde el oceáno es parte de la arquitectura.
+          </h3>
           <p className="text-ink/75 text-lg leading-relaxed">
-            Aquí, los días comienzan con el sonido de las olas, y terminan con
-            atardeceres que parecen hechos a medida. Piscina, servicio
-            personalizado y un entorno natural privilegiado se combinan mucho
-            más que una estadía: una experiencia. No solo un destino, sino una
-            forma de vivir en el mar.
+            Enclava en primera línea de la playa del Ñuero, CASA NAO redefine el
+            concepto de exclusividad frente al mar. Diseñada para viajeros
+            exigentes, esta residencia de lujo combina elegancia contemporánea,
+            amplitud y privacidad absoluta.
           </p>
         </FadeIn>
       </section>
@@ -156,6 +158,7 @@ export default async function LandingPage() {
               className="object-cover"
             />
           </div>
+
           <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
             <Image
               src="/images/SIDE_VIEW.avif"
@@ -165,6 +168,18 @@ export default async function LandingPage() {
               className="object-cover"
             />
           </div>
+        </FadeIn>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-6 py-24 md:py-1 text-center">
+        <FadeIn className="space-y-6">
+          <p className="text-ink/75 text-lg leading-relaxed">
+            Cada espacio ha sido diseñado para enmarcar el horizonte infinito,
+            mientras un servicio dedicado se encarga de cada detalle. Desde su
+            piscina privada hasta sus áreas sociales abiertas, CASA NAO ofrece
+            una experiencia donde el tiempo se detiene y el confort es el
+            protagonista.
+          </p>
         </FadeIn>
       </section>
 
@@ -261,6 +276,9 @@ export default async function LandingPage() {
           </FadeIn>
           <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <li className="py-3 border-t border-line text-sm text-ink/80">
+              Casa en primera fila
+            </li>
+            <li className="py-3 border-t border-line text-sm text-ink/80">
               Piscina con borde infinito
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
@@ -292,12 +310,6 @@ export default async function LandingPage() {
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
               Estacionamiento
-            </li>
-            <li className="py-3 border-t border-line text-sm text-ink/80">
-              Vista al mar
-            </li>
-            <li className="py-3 border-t border-line text-sm text-ink/80">
-              Balcón con vista al susent y al mar
             </li>
             <li className="py-3 border-t border-line text-sm text-ink/80">
               Acceso directo a playa
