@@ -1,34 +1,60 @@
 import "server-only";
 
-const WINDOW_MS = 60 * 60 * 1000;
-const MAX_HITS = 10;
+const RESERVATION_WINDOW_MS = 60 * 60 * 1000;
+const RESERVATION_MAX_HITS = 10;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_HITS = 8;
 
 type Bucket = { hits: number[] };
 
 const store = new Map<string, Bucket>();
 
-function sweep(now: number) {
+type RateLimitPolicy = {
+  namespace: "reservation" | "login";
+  windowMs: number;
+  maxHits: number;
+};
+
+function sweep(now: number, policy: RateLimitPolicy) {
   if (store.size < 512) return;
   for (const [key, bucket] of store) {
-    const fresh = bucket.hits.filter((t) => now - t < WINDOW_MS);
+    if (!key.startsWith(`${policy.namespace}:`)) continue;
+    const fresh = bucket.hits.filter((t) => now - t < policy.windowMs);
     if (fresh.length === 0) store.delete(key);
     else bucket.hits = fresh;
   }
 }
 
-export async function checkReservationRateLimit(identifier: string) {
+function checkRateLimit(identifier: string, policy: RateLimitPolicy) {
   const now = Date.now();
-  sweep(now);
+  sweep(now, policy);
 
-  const bucket = store.get(identifier) ?? { hits: [] };
-  bucket.hits = bucket.hits.filter((t) => now - t < WINDOW_MS);
+  const key = `${policy.namespace}:${identifier}`;
+  const bucket = store.get(key) ?? { hits: [] };
+  bucket.hits = bucket.hits.filter((t) => now - t < policy.windowMs);
 
-  if (bucket.hits.length >= MAX_HITS) {
-    store.set(identifier, bucket);
+  if (bucket.hits.length >= policy.maxHits) {
+    store.set(key, bucket);
     return { success: false, remaining: 0 };
   }
 
   bucket.hits.push(now);
-  store.set(identifier, bucket);
-  return { success: true, remaining: MAX_HITS - bucket.hits.length };
+  store.set(key, bucket);
+  return { success: true, remaining: policy.maxHits - bucket.hits.length };
+}
+
+export async function checkReservationRateLimit(identifier: string) {
+  return checkRateLimit(identifier, {
+    namespace: "reservation",
+    windowMs: RESERVATION_WINDOW_MS,
+    maxHits: RESERVATION_MAX_HITS,
+  });
+}
+
+export async function checkLoginRateLimit(identifier: string) {
+  return checkRateLimit(identifier, {
+    namespace: "login",
+    windowMs: LOGIN_WINDOW_MS,
+    maxHits: LOGIN_MAX_HITS,
+  });
 }
