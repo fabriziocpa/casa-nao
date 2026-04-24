@@ -2,6 +2,7 @@ import { siteConfig } from "@/config/site";
 import { getPublicSettings } from "@/features/settings/public-settings";
 
 const AMENITIES = [
+  "Casa en primera fila",
   "Piscina con borde infinito",
   "Parrilla con caja china",
   "Kamado",
