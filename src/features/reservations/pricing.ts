@@ -1,12 +1,16 @@
 import { eachDayOfInterval, parseISO } from "date-fns";
 import { toIso } from "@/lib/dates";
 
+export type PricingRuleKind = "manual" | "discount";
+
 export type PricingRuleInput = {
   startDate: string;
   endDate: string;
   nightlyCents: number;
   minNights: number | null;
   priority: number;
+  kind: PricingRuleKind;
+  discountPct: number | null;
 };
 
 export type BasePricingInput = {
@@ -15,12 +19,24 @@ export type BasePricingInput = {
   maxGuests: number;
 };
 
+export type StayNight = {
+  date: string;
+  cents: number;
+  baseCents: number;
+  ruleName?: string;
+  ruleKind?: PricingRuleKind;
+  discountPct?: number | null;
+};
+
 export type StayCalc = {
   nights: number;
-  breakdown: { date: string; cents: number }[];
+  breakdown: StayNight[];
   totalCents: number;
+  baseTotalCents: number;
+  savingsCents: number;
   minNightsRequired: number;
   appliedRuleNames: string[];
+  appliedDiscountPct: number | null;
 };
 
 /**
@@ -37,12 +53,13 @@ export function calculateStay(
   const end = typeof checkOut === "string" ? parseISO(checkOut) : checkOut;
 
   const interval = eachDayOfInterval({ start, end });
-  const nightDates = interval.slice(0, -1); // nights = days[start..end-1]
+  const nightDates = interval.slice(0, -1);
 
   let minNightsRequired = base.minNights;
   const applied = new Set<string>();
+  let singleDiscountPct: number | null | undefined = undefined;
 
-  const breakdown = nightDates.map((d) => {
+  const breakdown: StayNight[] = nightDates.map((d) => {
     const iso = toIso(d);
     const hit = [...rules]
       .filter((r) => iso >= r.startDate && iso <= r.endDate)
@@ -50,15 +67,34 @@ export function calculateStay(
     const cents = hit ? hit.nightlyCents : base.nightlyCents;
     if (hit?.minNights) minNightsRequired = Math.max(minNightsRequired, hit.minNights);
     if (hit?.name) applied.add(hit.name);
-    return { date: iso, cents };
+
+    if (hit?.kind === "discount" && hit.discountPct) {
+      if (singleDiscountPct === undefined) singleDiscountPct = hit.discountPct;
+      else if (singleDiscountPct !== hit.discountPct) singleDiscountPct = null;
+    } else if (hit) {
+      singleDiscountPct = null;
+    }
+
+    return {
+      date: iso,
+      cents,
+      baseCents: base.nightlyCents,
+      ruleName: hit?.name,
+      ruleKind: hit?.kind,
+      discountPct: hit?.discountPct ?? null,
+    };
   });
 
   const totalCents = breakdown.reduce((a, b) => a + b.cents, 0);
+  const baseTotalCents = breakdown.reduce((a, b) => a + b.baseCents, 0);
   return {
     nights: breakdown.length,
     breakdown,
     totalCents,
+    baseTotalCents,
+    savingsCents: Math.max(0, baseTotalCents - totalCents),
     minNightsRequired,
     appliedRuleNames: [...applied],
+    appliedDiscountPct: typeof singleDiscountPct === "number" ? singleDiscountPct : null,
   };
 }
