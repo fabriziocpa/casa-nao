@@ -1,8 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { formatUSDPrecise } from "@/lib/money";
+import { formatEs } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import type {
+  PricingRuleConflict,
+  PricingRuleFormState,
+} from "@/features/pricing-rules/actions";
 
 type Mode = "manual" | "discount";
 
@@ -15,10 +20,15 @@ type RuleDefaults = {
   minNights?: number | null;
   priority?: number;
   active?: boolean;
+  kind?: Mode;
+  discountPct?: number | null;
 };
 
 type Props = {
-  action: (fd: FormData) => Promise<void> | void;
+  action: (
+    prev: PricingRuleFormState,
+    fd: FormData,
+  ) => Promise<PricingRuleFormState>;
   rule?: RuleDefaults;
   baseNightlyCents: number;
   submitLabel: string;
@@ -28,10 +38,17 @@ const inputCls =
   "w-full h-10 rounded-md border border-line bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal";
 
 export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props) {
-  const [mode, setMode] = useState<Mode>("manual");
-  const [discountPct, setDiscountPct] = useState<string>("10");
+  const initialMode: Mode = rule?.kind ?? "manual";
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [discountPct, setDiscountPct] = useState<string>(
+    rule?.discountPct != null ? String(rule.discountPct) : "10",
+  );
   const [nightlyDollars, setNightlyDollars] = useState<string>(
     rule?.nightlyCents != null ? String(rule.nightlyCents / 100) : "",
+  );
+  const [state, formAction, pending] = useActionState<PricingRuleFormState, FormData>(
+    action,
+    null,
   );
 
   const previewCents = useMemo(
@@ -39,19 +56,29 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
     [mode, discountPct, nightlyDollars, baseNightlyCents],
   );
 
+  const fe = state && !state.ok ? state.fieldErrors ?? {} : {};
+  const errMsg = state && !state.ok ? state.error : null;
+  const warnings = state && state.ok ? state.warnings : [];
+  const successMsg = state && state.ok ? "Cambios guardados." : null;
+
   return (
     <form
-      action={action}
+      action={formAction}
       className="space-y-6 rounded-xl border border-line bg-white/70 p-6"
     >
       {rule?.id ? <input type="hidden" name="id" value={rule.id} /> : null}
 
-      <PreviewCard previewCents={previewCents} />
+      <PreviewCard
+        mode={mode}
+        previewCents={previewCents}
+        baseCents={baseNightlyCents}
+        discountPct={Number(discountPct)}
+      />
 
       <div className="space-y-4">
         <h3 className="tracking-label text-[11px] text-ink/60">Datos de la temporada</h3>
         <div className="grid gap-4 md:grid-cols-3">
-          <Field label="Nombre de la temporada" className="md:col-span-3">
+          <Field label="Nombre de la temporada" className="md:col-span-3" error={fe.name}>
             <input
               name="name"
               defaultValue={rule?.name ?? ""}
@@ -60,7 +87,7 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
               className={inputCls}
             />
           </Field>
-          <Field label="Desde">
+          <Field label="Desde" error={fe.startDate}>
             <input
               name="startDate"
               type="date"
@@ -69,7 +96,7 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
               className={inputCls}
             />
           </Field>
-          <Field label="Hasta">
+          <Field label="Hasta" error={fe.endDate}>
             <input
               name="endDate"
               type="date"
@@ -119,7 +146,7 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
 
         <div className="max-w-sm">
           {mode === "manual" ? (
-            <Field label="Precio por noche (USD)">
+            <Field label="Precio por noche (USD)" error={fe.nightlyDollars}>
               <input
                 name="nightlyDollars"
                 type="number"
@@ -133,7 +160,7 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
               />
             </Field>
           ) : (
-            <Field label="Porcentaje de descuento">
+            <Field label="Porcentaje de descuento" error={fe.discountPct}>
               <div className="relative">
                 <input
                   name="discountPct"
@@ -181,9 +208,24 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
         </div>
       </details>
 
+      {warnings.length > 0 ? <ConflictsCallout conflicts={warnings} /> : null}
+      {errMsg ? (
+        <p className="text-sm text-rose-700 bg-rose/25 border border-rose/40 rounded-md px-3 py-2">
+          {errMsg}
+        </p>
+      ) : null}
+      {successMsg && warnings.length === 0 ? (
+        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
+          {successMsg}
+        </p>
+      ) : null}
+
       <div className="pt-2 border-t border-line">
-        <button className="rounded-full bg-ink text-bg tracking-label text-[11px] px-6 py-3 hover:bg-deep-ocean transition">
-          {submitLabel}
+        <button
+          disabled={pending}
+          className="rounded-full bg-ink text-bg tracking-label text-[11px] px-6 py-3 hover:bg-deep-ocean transition disabled:opacity-40"
+        >
+          {pending ? "Guardando…" : submitLabel}
         </button>
       </div>
     </form>
@@ -191,19 +233,86 @@ export function RuleForm({ action, rule, baseNightlyCents, submitLabel }: Props)
 }
 
 function PreviewCard({
+  mode,
   previewCents,
+  baseCents,
+  discountPct,
 }: {
+  mode: Mode;
   previewCents: number | null;
+  baseCents: number;
+  discountPct: number;
 }) {
+  const savings =
+    previewCents != null && baseCents > previewCents
+      ? baseCents - previewCents
+      : 0;
+  const isDiscountMode = mode === "discount";
+  const validPct = Number.isFinite(discountPct) && discountPct > 0 && discountPct < 100;
+
   return (
-    <div className="rounded-lg bg-gradient-to-br from-sand/60 to-sand/20 border border-line p-5 flex items-center justify-between gap-4 flex-wrap">
-      <div>
-        <p className="tracking-label text-[11px] text-ink/60">Tarifa resultante</p>
-        <p className="font-display text-4xl text-ink">
-          {previewCents != null ? formatUSDPrecise(previewCents) : "—"}
+    <div className="rounded-lg bg-gradient-to-br from-sand/60 to-sand/20 border border-line p-5 flex items-start justify-between gap-4 flex-wrap">
+      <div className="space-y-1">
+        <p className="tracking-label text-[11px] text-ink/60">
+          {isDiscountMode ? "Descuento sobre tarifa base" : "Precio fijo por noche"}
         </p>
-        <p className="text-xs text-ink/60">por noche</p>
+        {isDiscountMode ? (
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <span className="text-ink/50 line-through text-lg">
+              {baseCents > 0 ? formatUSDPrecise(baseCents) : "—"}
+            </span>
+            <span className="font-display text-4xl text-ink">
+              {previewCents != null ? formatUSDPrecise(previewCents) : "—"}
+            </span>
+            {validPct ? (
+              <span className="rounded-full bg-emerald-600/10 text-emerald-700 px-2 py-0.5 text-xs font-medium">
+                –{Math.round(discountPct)}%
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <p className="font-display text-4xl text-ink">
+            {previewCents != null ? formatUSDPrecise(previewCents) : "—"}
+          </p>
+        )}
+        <p className="text-xs text-ink/60">
+          por noche
+          {savings > 0 && !isDiscountMode
+            ? ` · ahorro de ${formatUSDPrecise(savings)} vs tarifa base`
+            : null}
+          {savings > 0 && isDiscountMode
+            ? ` · ahorras ${formatUSDPrecise(savings)} por noche`
+            : null}
+        </p>
       </div>
+    </div>
+  );
+}
+
+function ConflictsCallout({ conflicts }: { conflicts: PricingRuleConflict[] }) {
+  return (
+    <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 space-y-2">
+      <p className="text-sm font-medium text-amber-900">
+        Conflictos detectados con otras temporadas activas
+      </p>
+      <ul className="text-xs text-amber-900/80 space-y-1">
+        {conflicts.map((c) => (
+          <li key={c.id} className="flex justify-between gap-3">
+            <span>
+              <span className="font-medium">{c.name}</span> · {formatEs(c.startDate)} → {formatEs(c.endDate)}
+            </span>
+            <span>
+              {c.willWin
+                ? `gana esta temporada (prioridad ${c.priority})`
+                : `pierde frente a la nueva (prioridad ${c.priority})`}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-[11px] text-amber-900/70">
+        Cuando dos temporadas se solapan, los días en común usan la de mayor prioridad. Ajusta
+        las fechas o la prioridad si quieres otro resultado.
+      </p>
     </div>
   );
 }
@@ -267,11 +376,13 @@ function ModeCard({
 function Field({
   label,
   hint,
+  error,
   className,
   children,
 }: {
   label: string;
   hint?: string;
+  error?: string;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -279,7 +390,10 @@ function Field({
     <label className={cn("block space-y-1.5", className)}>
       <span className="tracking-label text-[11px] text-ink/70">{label}</span>
       {children}
-      {hint ? <span className="block text-[11px] text-ink/50">{hint}</span> : null}
+      {error ? <span className="block text-xs text-rose-700">{error}</span> : null}
+      {hint && !error ? (
+        <span className="block text-[11px] text-ink/50">{hint}</span>
+      ) : null}
     </label>
   );
 }

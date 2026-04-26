@@ -2,6 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { isAdminEmail } from "@/lib/auth/admin-allowlist";
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
@@ -23,8 +24,11 @@ export async function createSupabaseServerClient() {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
             });
-          } catch {
-            // Server Component — cookie mutation allowed only in Server Actions / Route Handlers.
+          } catch (error) {
+            throw new Error(
+              "Failed to persist Supabase auth cookies. Use mutable cookies (Server Actions or Route Handlers) when auth can refresh.",
+              { cause: error },
+            );
           }
         },
       },
@@ -40,17 +44,9 @@ async function getCurrentUser() {
   return user;
 }
 
-export function getAdminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
-
 export async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user) return { user: null, isAdmin: false as const };
-  const allow = getAdminEmails();
-  const isAdmin = Boolean(user.email && allow.includes(user.email.toLowerCase()));
+  const isAdmin = isAdminEmail(user.email);
   return { user, isAdmin };
 }

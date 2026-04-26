@@ -18,6 +18,8 @@ export const reservationStatus = pgEnum("reservation_status", [
 
 export const docType = pgEnum("doc_type", ["DNI", "CE", "PASSPORT"]);
 
+export const pricingRuleKind = pgEnum("pricing_rule_kind", ["manual", "discount"]);
+
 export const reservations = pgTable("reservations", {
   id: uuid("id").defaultRandom().primaryKey(),
   checkIn: date("check_in").notNull(),
@@ -57,6 +59,8 @@ export const pricingRules = pgTable("pricing_rules", {
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   nightlyCents: integer("nightly_cents").notNull(),
+  kind: pricingRuleKind("kind").notNull().default("manual"),
+  discountPct: integer("discount_pct"),
   minNights: integer("min_nights"),
   priority: integer("priority").notNull().default(0),
   active: boolean("active").notNull().default(true),
