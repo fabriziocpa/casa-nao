@@ -14,6 +14,7 @@ type Props = {
   blockedIso: string[];
   rules: (PricingRuleInput & { name: string })[];
   base: BasePricingInput;
+  monthlyDiscounts: { ym: string; pct: number; ruleName: string }[];
 };
 
 type DocType = "DNI" | "CE" | "PASSPORT";
@@ -62,7 +63,7 @@ const DOC_CONFIG: Record<
   },
 };
 
-export function ReservationForm({ blockedIso, rules, base }: Props) {
+export function ReservationForm({ blockedIso, rules, base, monthlyDiscounts }: Props) {
   const [range, setRange] = useState<DateRange | undefined>();
   const [docType, setDocType] = useState<DocType>("DNI");
   const [docNumber, setDocNumber] = useState("");
@@ -100,7 +101,12 @@ export function ReservationForm({ blockedIso, rules, base }: Props) {
       <div className="lg:col-span-7 space-y-8">
         <div className="space-y-3">
           <p className="tracking-label text-xs text-ink/60">1 · Elige tus fechas</p>
-          <AvailabilityCalendar value={range} onChange={setRange} blockedIso={blockedIso} />
+          <AvailabilityCalendar
+            value={range}
+            onChange={setRange}
+            blockedIso={blockedIso}
+            monthlyDiscounts={monthlyDiscounts}
+          />
           <input type="hidden" name="checkIn" value={checkIn} />
           <input type="hidden" name="checkOut" value={checkOut} />
           {fe.checkIn ? <p className="text-sm text-rose-700">{fe.checkIn}</p> : null}

@@ -1,16 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isAdminEmail } from "@/lib/auth/admin-allowlist";
 
 const LOGIN_PATH = "/auth/login";
+const ADMIN_PATH_PREFIX = "/admin";
 
-function adminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
+function safeRedirectPath(path: string | null | undefined) {
+  if (!path) return ADMIN_PATH_PREFIX;
+  if (!path.startsWith("/") || path.startsWith("//")) return ADMIN_PATH_PREFIX;
+  return path;
 }
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isAdminRoute = pathname.startsWith(ADMIN_PATH_PREFIX);
+  const isLoginRoute = pathname === LOGIN_PATH;
+
+  if (!isAdminRoute && !isLoginRoute) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
   type CookieToSet = {
     name: string;
@@ -41,15 +50,22 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (isLoginRoute) {
+    if (isAdminEmail(user?.email)) {
+      const target = safeRedirectPath(request.nextUrl.searchParams.get("redirectTo"));
+      return NextResponse.redirect(new URL(target, request.url));
+    }
+    return response;
+  }
+
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = LOGIN_PATH;
-    url.searchParams.set("redirectTo", request.nextUrl.pathname);
+    url.searchParams.set("redirectTo", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 
-  const allow = adminEmails();
-  if (!user.email || !allow.includes(user.email.toLowerCase())) {
+  if (!isAdminEmail(user.email)) {
     const url = request.nextUrl.clone();
     url.pathname = LOGIN_PATH;
     url.searchParams.set("error", "not_allowed");
@@ -60,5 +76,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/auth/login"],
 };

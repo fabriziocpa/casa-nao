@@ -12,7 +12,9 @@
       "Bash(sips -g pixelWidth -g pixelHeight /Users/fabriziocontreras/Documents/Universidad/Code/Project/casa-nao/public/images/POOL_NIGHT.avif)",
       "Bash(sips -s format jpeg /Users/fabriziocontreras/Documents/Universidad/Code/Project/casa-nao/public/images/POOL_NIGHT.avif --resampleWidth 1200 --out /Users/fabriziocontreras/Documents/Universidad/Code/Project/casa-nao/public/images/POOL_NIGHT_OG.jpg)",
       "Bash(sips -g pixelWidth -g pixelHeight /Users/fabriziocontreras/Documents/Universidad/Code/Project/casa-nao/public/images/POOL_NIGHT_OG.jpg)",
-      "Bash(pnpm typecheck *)"
+      "Bash(pnpm typecheck *)",
+      "Bash(DATABASE_URL=\"postgres://placeholder/placeholder\" npx drizzle-kit generate)",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }
