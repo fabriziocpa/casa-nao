@@ -13,6 +13,7 @@ import { reservationInputSchema } from "./schemas";
 import { calculateStay } from "./pricing";
 import { getActivePricingRules, getBasePricing } from "./queries";
 import { requireAdmin } from "@/lib/supabase/server";
+import { sendReservationNotification } from "@/lib/email";
 
 export type ReservationFormState =
   | { ok: true; reservationId: string }
@@ -92,7 +93,7 @@ export async function submitReservation(
     };
   }
 
-  await db.insert(reservations).values({
+  const reservationData = {
     checkIn: input.checkIn,
     checkOut: input.checkOut,
     nights: stay.nights,
@@ -103,13 +104,35 @@ export async function submitReservation(
     lastName: input.lastName,
     email: input.email.toLowerCase(),
     phone: input.phone,
-    message: input.message ?? null,
+    message: input.message ? input.message : null,
     consent: input.consent,
     nightlyBreakdown: JSON.stringify(stay.breakdown),
     totalCents: stay.totalCents,
     currency: "USD",
-    status: "pending",
-  });
+    status: "pending" as const,
+  };
+
+  await db.insert(reservations).values(reservationData);
+
+  try {
+    await sendReservationNotification({
+      checkIn: reservationData.checkIn,
+      checkOut: reservationData.checkOut,
+      nights: reservationData.nights,
+      guests: reservationData.guests,
+      docType: reservationData.docType,
+      docNumber: reservationData.docNumber,
+      firstName: reservationData.firstName,
+      lastName: reservationData.lastName,
+      email: reservationData.email,
+      phone: reservationData.phone,
+      message: reservationData.message,
+      totalCents: reservationData.totalCents,
+      currency: reservationData.currency,
+    });
+  } catch (err) {
+    console.error("[reservation] Failed to send notification email:", err);
+  }
 
   revalidatePath("/");
   redirect("/reserva/exito");
