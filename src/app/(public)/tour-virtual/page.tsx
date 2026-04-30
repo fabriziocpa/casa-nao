@@ -16,9 +16,9 @@ const TOURS = [
     src: "/videos/OUTSIDE_360.webm",
   },
   {
-    id: "terrace",
-    label: "Terraza",
-    title: "Terraza sobre el mar",
+    id: "balcon",
+    label: "Balcón",
+    title: "Balcón con vista al mar",
     src: "/videos/TOUR_TERRACE_360.webm",
   },
   {

@@ -138,8 +138,8 @@ export default async function LandingPage() {
             Donde el oceáno es parte de la arquitectura.
           </h3>
           <p className="text-ink/75 text-lg leading-relaxed">
-            Enclava en primera línea de la playa del Ñuero, CASA NAO redefine el
-            concepto de exclusividad frente al mar. Diseñada para viajeros
+            Enclavada en primera línea de la playa del Ñuro, CASA NAO redefine
+            el concepto de exclusividad frente al mar. Diseñada para viajeros
             exigentes, esta residencia de lujo combina elegancia contemporánea,
             amplitud y privacidad absoluta.
           </p>
