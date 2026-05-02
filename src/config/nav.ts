@@ -2,6 +2,7 @@ export const publicNav = [
   { href: "/", label: "Inicio" },
   { href: "/galeria", label: "Galería" },
   { href: "/tour-virtual", label: "Tour 360°" },
+  { href: "/precios", label: "Precios" },
   { href: "/politicas", label: "Políticas" },
   { href: "/#reserva", label: "Reservar" },
 ] as const;
